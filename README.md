@@ -25,6 +25,10 @@ Create a local `.env` file from `.env.example` and authenticate with Google Clou
 ## Project Structure
 
 ```text
+.env.example
+AGENTS.md
+DESIGN.md
+PRODUCT.md
 claimsops/
   app.py
   core/
@@ -36,8 +40,18 @@ claimsops/
     policies.json
     sample_claims.json
 docs/
+  agent_skill_contract.md
   prompts_and_tools.md
 ```
+
+## Design And Agent Guidance
+
+Before changing the UI or agent workflow, read:
+
+- `PRODUCT.md` for the product lane, users, purpose, anti-references, and accessibility baseline.
+- `DESIGN.md` for the Streamlit visual system and design acceptance checks.
+- `AGENTS.md` for implementation guardrails, secret handling, and verification steps.
+- `docs/agent_skill_contract.md` for the operational agent/tool contract shown in the app.
 
 ## Presentation Positioning
 
@@ -47,4 +61,3 @@ Use this MVP as the "demo flow" for the final assignment:
 2. Run the ClaimsOps Agent workflow.
 3. Show the agent trace: intake, coverage, evidence, risk, recommendation, communication.
 4. Emphasize the human-in-the-loop approval gate for high-impact decisions.
-

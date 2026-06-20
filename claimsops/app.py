@@ -27,19 +27,24 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --co-canvas: #090909;
-            --co-surface-1: #141414;
-            --co-surface-2: #1c1c1c;
-            --co-hairline: #262626;
-            --co-hairline-soft: #1a1a1a;
-            --co-ink: #ffffff;
-            --co-muted: #999999;
-            --co-blue: #0099ff;
-            --co-magenta: #d44df0;
-            --co-violet: #6a4cf5;
-            --co-orange: #ff7a3d;
-            --co-coral: #ff5577;
-            --co-success: #22c55e;
+            --co-canvas: #11100c;
+            --co-deep: #080704;
+            --co-surface-1: #191812;
+            --co-surface-2: #242219;
+            --co-graphite: #302d22;
+            --co-hairline: rgba(222, 198, 135, 0.18);
+            --co-hairline-soft: rgba(222, 198, 135, 0.12);
+            --co-hairline-strong: rgba(227, 182, 75, 0.56);
+            --co-ink: #ede8dc;
+            --co-body: #d8d1c2;
+            --co-muted: #aaa18f;
+            --co-faint: #817867;
+            --co-gold: #e3b64b;
+            --co-gold-soft: #f0cf79;
+            --co-patina: #5fc3bc;
+            --co-patina-deep: #1d5751;
+            --co-warning: #c76a45;
+            --co-success: #6dcc8b;
         }
 
         :root,
@@ -50,11 +55,11 @@ def inject_css() -> None:
         html, body, [data-testid="stAppViewContainer"], .stApp {
             background: var(--co-canvas);
             color: var(--co-ink);
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: "Aptos", "Avenir Next", "Albert Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
             font-feature-settings: "cv01", "cv05", "cv09", "cv11", "ss03", "ss07", "tnum";
             letter-spacing: 0;
             overflow-x: hidden;
-            -webkit-tap-highlight-color: rgba(0,153,255,0.18);
+            -webkit-tap-highlight-color: rgba(95,195,188,0.2);
         }
 
         .block-container {
@@ -67,7 +72,7 @@ def inject_css() -> None:
         .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
             color: var(--co-ink);
             letter-spacing: 0;
-            font-weight: 650;
+            font-weight: 560;
             line-height: 1;
         }
 
@@ -84,12 +89,12 @@ def inject_css() -> None:
         }
 
         a {
-            color: var(--co-blue) !important;
+            color: var(--co-patina) !important;
         }
 
         [data-testid="stSidebar"] {
-            background: #050505;
-            border-right: 1px solid var(--co-hairline-soft);
+            background: var(--co-deep);
+            border-right: 1px solid var(--co-hairline);
         }
 
         [data-testid="stSidebar"] h1,
@@ -108,9 +113,9 @@ def inject_css() -> None:
         [data-testid="stMetric"] {
             background: var(--co-surface-1);
             border: 1px solid var(--co-hairline);
-            border-radius: 20px;
+            border-radius: 8px;
             padding: 1rem;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(0,0,0,0.25);
+            box-shadow: inset 0 1px 0 rgba(237,232,220,0.05);
         }
 
         [data-testid="stMetric"] label,
@@ -122,22 +127,22 @@ def inject_css() -> None:
 
         [data-testid="stMetric"] [data-testid="stMetricValue"] {
             color: var(--co-ink);
-            font-weight: 650;
+            font-weight: 560;
         }
 
         .stButton > button,
         .stFormSubmitButton > button {
-            min-height: 44px;
-            border-radius: 100px;
-            border: 0;
-            background: var(--co-ink);
-            color: #000000;
+            min-height: 50px;
+            border-radius: 5px;
+            border: 1px solid var(--co-hairline-strong);
+            background: var(--co-gold);
+            color: var(--co-deep);
             font-size: 14px;
             font-weight: 650;
-            padding: 10px 15px;
+            padding: 12px 18px;
             box-shadow: none;
             touch-action: manipulation;
-            transition: transform 140ms ease, box-shadow 140ms ease;
+            transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease, border-color 140ms ease, color 140ms ease;
         }
 
         .stButton > button *,
@@ -149,35 +154,45 @@ def inject_css() -> None:
         }
 
         [data-testid="stSidebar"] .stButton > button {
-            background: var(--co-surface-2);
-            color: var(--co-ink);
-            border: 1px solid var(--co-hairline);
+            background: transparent;
+            color: var(--co-gold);
+            border: 1px solid var(--co-hairline-strong);
         }
 
         .stButton > button:hover,
         .stFormSubmitButton > button:hover,
         .stButton > button:active,
         .stFormSubmitButton > button:active {
-            color: #000000;
-            border: 0;
+            color: var(--co-deep);
+            background: var(--co-gold-soft);
+            border: 1px solid var(--co-hairline-strong);
             transform: translateY(-1px);
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 16px 44px rgba(4,3,2,0.36), inset 0 1px 0 rgba(237,232,220,0.18);
         }
 
         [data-testid="stSidebar"] .stButton > button:hover,
         [data-testid="stSidebar"] .stButton > button:active {
-            background: #242424;
-            color: var(--co-ink);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(227,182,75,0.08);
+            color: var(--co-gold-soft);
+            border: 1px solid var(--co-hairline-strong);
         }
 
         .stButton > button:focus-visible,
         .stFormSubmitButton > button:focus-visible,
+        a:focus-visible,
         input:focus-visible,
         textarea:focus-visible {
-            box-shadow: 0 0 0 1px rgba(0,153,255,0.35) !important;
-            outline: 1px solid rgba(0,153,255,0.55) !important;
-            outline-offset: 2px !important;
+            box-shadow: 0 0 0 1px rgba(95,195,188,0.34) !important;
+            outline: 1px solid rgba(95,195,188,0.72) !important;
+            outline-offset: 4px !important;
+        }
+
+        [data-baseweb="input"]:focus-within > div,
+        [data-baseweb="textarea"]:focus-within textarea,
+        [data-baseweb="select"]:focus-within > div,
+        [data-baseweb="datepicker"]:focus-within > div {
+            border-color: var(--co-patina) !important;
+            box-shadow: 0 0 0 1px rgba(95,195,188,0.34) !important;
         }
 
         [data-baseweb="input"] > div,
@@ -187,7 +202,7 @@ def inject_css() -> None:
         [data-baseweb="base-input"] {
             background: var(--co-surface-1) !important;
             border: 1px solid var(--co-hairline) !important;
-            border-radius: 10px !important;
+            border-radius: 8px !important;
             color: var(--co-ink) !important;
         }
 
@@ -203,7 +218,7 @@ def inject_css() -> None:
         [role="listbox"] {
             background: var(--co-surface-1) !important;
             border: 1px solid var(--co-hairline) !important;
-            border-radius: 10px !important;
+            border-radius: 8px !important;
         }
 
         [role="option"]:hover,
@@ -215,18 +230,18 @@ def inject_css() -> None:
         input, textarea, select {
             background-color: var(--co-surface-1) !important;
             color: var(--co-ink) !important;
-            caret-color: var(--co-blue);
+            caret-color: var(--co-patina);
         }
 
         [data-testid="stTabs"] [role="tablist"] {
             gap: 8px;
-            border-bottom: 1px solid var(--co-hairline-soft);
+            border-bottom: 1px solid var(--co-hairline);
         }
 
         [data-testid="stTabs"] [role="tab"] {
             color: var(--co-muted);
             background: var(--co-canvas);
-            border-radius: 100px;
+            border-radius: 5px;
             padding: 8px 14px;
             min-height: 40px;
         }
@@ -241,6 +256,7 @@ def inject_css() -> None:
         [data-testid="stTabs"] [aria-selected="true"] {
             color: var(--co-ink);
             background: var(--co-surface-2);
+            box-shadow: inset 0 -1px 0 var(--co-hairline-strong);
         }
 
         [data-testid="stTabs"] [data-baseweb="tab-highlight"] {
@@ -249,7 +265,7 @@ def inject_css() -> None:
 
         [data-testid="stDataFrame"],
         [data-testid="stTable"] {
-            border-radius: 20px;
+            border-radius: 8px;
             overflow: hidden;
             border: 1px solid var(--co-hairline);
             background: var(--co-surface-1);
@@ -258,7 +274,7 @@ def inject_css() -> None:
         [data-testid="stExpander"] {
             background: var(--co-canvas);
             border: 1px solid var(--co-hairline-soft);
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         [data-testid="stExpander"] summary,
@@ -267,7 +283,7 @@ def inject_css() -> None:
         }
 
         [data-testid="stAlert"] {
-            border-radius: 20px;
+            border-radius: 8px;
             border: 1px solid var(--co-hairline);
             background: var(--co-surface-1);
             color: var(--co-ink);
@@ -301,7 +317,7 @@ def inject_css() -> None:
         .co-title {
             color: var(--co-ink);
             font-size: 62px;
-            font-weight: 650;
+            font-weight: 520;
             line-height: 0.98;
             letter-spacing: 0;
             max-width: 760px;
@@ -312,7 +328,7 @@ def inject_css() -> None:
             color: var(--co-muted);
             max-width: 620px;
             font-size: 18px;
-            line-height: 1.3;
+            line-height: 1.55;
             margin-top: 18px;
             text-wrap: pretty;
         }
@@ -328,19 +344,19 @@ def inject_css() -> None:
             display: inline-flex;
             min-height: 40px;
             align-items: center;
-            border-radius: 100px;
+            border-radius: 5px;
             padding: 8px 14px;
             background: var(--co-surface-1);
-            color: var(--co-ink);
+            color: var(--co-body);
             font-size: 14px;
             font-weight: 500;
             border: 1px solid var(--co-hairline);
         }
 
         .co-pill-primary {
-            background: var(--co-ink);
-            color: #000000;
-            border-color: var(--co-ink);
+            background: var(--co-gold);
+            color: var(--co-deep);
+            border-color: var(--co-gold);
             font-weight: 650;
         }
 
@@ -348,22 +364,24 @@ def inject_css() -> None:
             position: relative;
             overflow: hidden;
             min-height: 290px;
-            border-radius: 30px;
+            border-radius: 8px;
             padding: 30px;
             background:
-                radial-gradient(circle at 18% 20%, rgba(212,77,240,0.96), transparent 33%),
-                radial-gradient(circle at 78% 18%, rgba(106,76,245,0.9), transparent 35%),
-                radial-gradient(circle at 70% 84%, rgba(255,122,61,0.94), transparent 38%),
-                linear-gradient(135deg, #161616 0%, #0a0a0a 100%);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 60px rgba(0,0,0,0.38);
+                linear-gradient(112deg, rgba(227,182,75,0.24) 0 1px, transparent 1px 34%),
+                linear-gradient(90deg, rgba(227,182,75,0.13), transparent 42%),
+                linear-gradient(180deg, rgba(95,195,188,0.12), transparent 48%),
+                linear-gradient(135deg, var(--co-surface-2) 0%, var(--co-deep) 100%);
+            border: 1px solid var(--co-hairline-strong);
+            box-shadow: inset 0 1px 0 rgba(237,232,220,0.07), 0 24px 70px rgba(4,3,2,0.42);
         }
 
         .co-spotlight::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.3));
+            background:
+                linear-gradient(180deg, rgba(17,16,12,0.04), rgba(8,7,4,0.34)),
+                repeating-linear-gradient(90deg, transparent 0 18px, rgba(227,182,75,0.04) 18px 19px);
             pointer-events: none;
         }
 
@@ -378,30 +396,30 @@ def inject_css() -> None:
 
         .co-spotlight-label {
             font-size: 13px;
-            color: rgba(255,255,255,0.78);
+            color: var(--co-muted);
             font-weight: 500;
         }
 
         .co-spotlight-value {
             color: var(--co-ink);
             font-size: 40px;
-            font-weight: 650;
+            font-weight: 620;
             line-height: 1;
             letter-spacing: 0;
         }
 
         .co-spotlight-meta {
-            color: rgba(255,255,255,0.78);
+            color: var(--co-body);
             font-size: 14px;
-            line-height: 1.3;
+            line-height: 1.45;
             margin-top: 10px;
         }
 
         .co-action {
-            border-radius: 30px;
+            border-radius: 8px;
             padding: 30px;
             background:
-                radial-gradient(circle at 15% 12%, rgba(0,153,255,0.18), transparent 28%),
+                linear-gradient(90deg, rgba(95,195,188,0.12), transparent 42%),
                 var(--co-surface-2);
             border: 1px solid var(--co-hairline);
             margin: 16px 0 20px;
@@ -425,28 +443,28 @@ def inject_css() -> None:
         .status-pill {
             display: inline-block;
             padding: 8px 14px;
-            border-radius: 100px;
+            border-radius: 5px;
             font-weight: 650;
             font-size: 13px;
             border: 1px solid var(--co-hairline);
         }
 
         .pill-low {
-            color: #d9ffe7;
-            background: rgba(34,197,94,0.16);
-            border-color: rgba(34,197,94,0.28);
+            color: #d7f4dc;
+            background: rgba(109,204,139,0.14);
+            border-color: rgba(109,204,139,0.32);
         }
 
         .pill-medium {
-            color: #ffe4c8;
-            background: rgba(255,122,61,0.16);
-            border-color: rgba(255,122,61,0.28);
+            color: #f7deb0;
+            background: rgba(227,182,75,0.14);
+            border-color: rgba(227,182,75,0.34);
         }
 
         .pill-high {
-            color: #ffd8e2;
-            background: rgba(255,85,119,0.18);
-            border-color: rgba(255,85,119,0.32);
+            color: #f6c6b6;
+            background: rgba(199,106,69,0.16);
+            border-color: rgba(199,106,69,0.38);
         }
 
         .small-muted { color: var(--co-muted); font-size: 0.86rem; }
@@ -459,6 +477,22 @@ def inject_css() -> None:
             .co-hero-copy {
                 min-height: auto;
                 padding: 24px 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .stButton > button:hover,
+            .stFormSubmitButton > button:hover,
+            .stButton > button:active,
+            .stFormSubmitButton > button:active {
+                transform: none;
             }
         }
         </style>
@@ -729,17 +763,17 @@ def architecture() -> None:
         """
         digraph {
           rankdir=LR;
-          graph [bgcolor="#090909"];
-          node [shape=box, style="rounded,filled", fillcolor="#141414", color="#262626", fontname="Arial", fontcolor="#FFFFFF", margin="0.18,0.12"];
-          edge [color="#999999", fontcolor="#999999"];
+          graph [bgcolor="#11100c"];
+          node [shape=box, style="rounded,filled", fillcolor="#191812", color="#4f472d", fontname="Aptos", fontcolor="#ede8dc", margin="0.18,0.12"];
+          edge [color="#817867", fontcolor="#aaa18f"];
           intake [label="Claims Intake Agent"];
           coverage [label="Coverage Verification Agent"];
           evidence [label="Evidence Review Agent"];
           risk [label="Risk & Fraud Triage Agent"];
           comms [label="Communication Agent"];
-          supervisor [label="Supervisor Agent", fillcolor="#1c1c1c", color="#0099ff"];
-          human [label="Human Adjuster Approval", fillcolor="#122318", color="#22c55e"];
-          tools [label="Tools: policy lookup, history, checklist, risk rules, drafts", fillcolor="#241916", color="#ff7a3d"];
+          supervisor [label="Supervisor Agent", fillcolor="#242219", color="#e3b64b"];
+          human [label="Human Adjuster Approval", fillcolor="#17332f", color="#5fc3bc"];
+          tools [label="Tools: policy lookup, history, checklist, risk rules, drafts", fillcolor="#302719", color="#e3b64b"];
           intake -> supervisor;
           supervisor -> coverage;
           supervisor -> evidence;
@@ -761,11 +795,19 @@ def architecture() -> None:
 
 
 def prompt_pack() -> None:
-    path = DOCS_DIR / "prompts_and_tools.md"
-    if path.exists():
+    docs = [
+        DOCS_DIR / "prompts_and_tools.md",
+        DOCS_DIR / "agent_skill_contract.md",
+    ]
+    found = [path for path in docs if path.exists()]
+    if not found:
+        st.info("Prompt pack files not found.")
+        return
+
+    for index, path in enumerate(found):
+        if index:
+            st.divider()
         st.markdown(path.read_text(encoding="utf-8"))
-    else:
-        st.info("Prompt pack file not found.")
 
 
 def main() -> None:
