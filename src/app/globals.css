@@ -808,6 +808,98 @@ textarea {
   line-height: 1;
 }
 
+.vertex-panel {
+  border-color: rgba(0, 153, 255, 0.22);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(0, 153, 255, 0.12), transparent 32%),
+    var(--co-surface-1);
+}
+
+.vertex-panel.live {
+  border-color: rgba(34, 197, 94, 0.3);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(34, 197, 94, 0.13), transparent 32%),
+    radial-gradient(circle at 82% 18%, rgba(212, 77, 240, 0.1), transparent 34%),
+    var(--co-surface-1);
+}
+
+.runtime-badge {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid var(--co-hairline);
+  border-radius: 5px;
+  background: var(--co-canvas);
+  color: var(--co-muted);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.runtime-badge.live {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.14);
+  color: #d9ffe7;
+}
+
+.vertex-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 12px;
+}
+
+.vertex-summary,
+.vertex-list,
+.vertex-empty {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--co-hairline-soft);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.vertex-summary {
+  grid-row: span 2;
+}
+
+.vertex-summary span,
+.vertex-list span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--co-muted);
+  font-size: 12px;
+  font-weight: 720;
+  text-transform: uppercase;
+}
+
+.vertex-summary p {
+  margin: 0;
+  color: var(--co-ink);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.vertex-list ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.vertex-list li {
+  color: var(--co-body);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.vertex-empty {
+  display: grid;
+  gap: 14px;
+}
+
+.vertex-empty p {
+  margin: 0;
+}
+
 .reason-card {
   display: grid;
   gap: 9px;
@@ -909,6 +1001,11 @@ textarea {
   margin: 0;
   color: var(--co-body);
   overflow-wrap: anywhere;
+}
+
+.detail-list.compact div {
+  grid-template-columns: 132px minmax(0, 1fr);
+  padding-bottom: 8px;
 }
 
 .severity {
@@ -1288,7 +1385,8 @@ td {
   }
 
   .driver-grid,
-  .owner-grid {
+  .owner-grid,
+  .vertex-review-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1360,8 +1458,13 @@ td {
   .document-grid,
   .driver-grid,
   .owner-grid,
+  .vertex-review-grid,
   .decision-brief {
     grid-template-columns: 1fr;
+  }
+
+  .vertex-summary {
+    grid-row: auto;
   }
 }
 

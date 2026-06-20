@@ -81,7 +81,23 @@ Build Command: pnpm build
 Output Directory: .next
 ```
 
-The Vercel app currently runs the deterministic JavaScript claims engine in `src/lib/claimsEngine.js`. It does not require cloud credentials.
+The Vercel app always runs the deterministic JavaScript claims engine in `src/lib/claimsEngine.js`. It also includes a server-side Vertex AI route at `src/app/api/claimsops/analyze/route.js`. When credentials are configured, the route calls Gemini on Vertex AI to generate a live adjuster-facing review while the deterministic tool output remains the source of truth.
+
+## Enable Vertex AI On Vercel
+
+Add these environment variables in **Vercel Project Settings -> Environment Variables**:
+
+```text
+GOOGLE_GENAI_USE_VERTEXAI=true
+GOOGLE_CLOUD_PROJECT=agenticai-500006
+GOOGLE_CLOUD_PROJECT_NUMBER=808855388233
+GOOGLE_CLOUD_LOCATION=us-central1
+VERTEX_AI_LIVE=true
+VERTEX_AI_MODEL=gemini-2.0-flash
+GOOGLE_SERVICE_ACCOUNT_JSON={...service account JSON...}
+```
+
+The service account must be allowed to call Vertex AI in project `agenticai-500006`. Do not commit the JSON key. After updating Vercel variables, redeploy the project. In the app, load or submit a claim and open **Agent Review**; the **Vertex AI Live Review** panel will show either the live review or the exact fallback reason.
 
 ## Run The Streamlit App
 

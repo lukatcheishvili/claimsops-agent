@@ -114,6 +114,14 @@ Tool executes: generates draft text.
 
 Agent decides: message intent and whether language is safe/non-final.
 
+### vertex_live_review_tool
+
+Purpose: Ask Gemini on Vertex AI for an adjuster-facing explanation of the deterministic tool output.
+
+Tool executes: server-side Vercel API route signs a service-account request, calls Vertex AI `generateContent`, and parses a structured review.
+
+Agent decides: no final claim decision. The live review can explain reasoning, questions, next steps, and caveats, but deterministic policy/evidence/risk tools remain the source of truth.
+
 ## Risk Controls
 
 - Human-in-the-loop for settlement, denial, fraud escalation, or unclear coverage.
@@ -122,4 +130,3 @@ Agent decides: message intent and whether language is safe/non-final.
 - PII minimized in the demo dataset.
 - Prompt-injection resistance: user-provided claim descriptions cannot override system boundaries.
 - Confidence and risk thresholds determine escalation.
-

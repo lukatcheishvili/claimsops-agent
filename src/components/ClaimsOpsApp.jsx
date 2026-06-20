@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -75,6 +75,20 @@ const chartColors = {
   ink: "#ffffff"
 };
 
+const initialVertexState = {
+  status: "checking",
+  mode: "deterministic",
+  enabled: false,
+  liveRequested: false,
+  hasCredentials: false,
+  projectId: "agenticai-500006",
+  projectNumber: "808855388233",
+  location: "us-central1",
+  model: "gemini-2.0-flash",
+  message: "Checking Vertex AI runtime configuration...",
+  review: null
+};
+
 export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [activeTab, setActiveTab] = useState("submit");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -82,16 +96,50 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [draft, setDraft] = useState(sampleClaims[0]);
   const [approvalState, setApprovalState] = useState("Pending Adjuster Review");
   const [workflowNote, setWorkflowNote] = useState("Default mode: deterministic demo workflow.");
+  const [vertexState, setVertexState] = useState(initialVertexState);
   const analysis = useMemo(() => analyzeClaim(submittedClaim), [submittedClaim]);
   const selectedSample = sampleClaims[selectedIndex];
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadVertexStatus() {
+      try {
+        const response = await fetch("/api/claimsops/analyze");
+        const payload = await response.json();
+        if (!active) return;
+        const vertex = payload.vertex || {};
+        setVertexState((current) => ({
+          ...current,
+          ...vertex,
+          enabled: false,
+          status: vertex.liveRequested && vertex.hasCredentials ? "ready" : vertex.liveRequested ? "missing_credentials" : "disabled",
+          message: getVertexConfigMessage(vertex)
+        }));
+      } catch (error) {
+        if (!active) return;
+        setVertexState((current) => ({
+          ...current,
+          status: "error",
+          message: `Unable to read Vertex AI runtime status: ${error.message}`
+        }));
+      }
+    }
+
+    loadVertexStatus();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function loadSelectedClaim() {
     const sample = sampleClaims[selectedIndex];
     setDraft(sample);
     setSubmittedClaim(sample);
     setApprovalState("Pending Adjuster Review");
-    setWorkflowNote("Loaded sample claim and refreshed deterministic analysis.");
+    setWorkflowNote("Loaded sample claim and started ClaimsOps workflow.");
     setActiveTab("review");
+    runVertexWorkflow(sample);
   }
 
   function startNewClaim() {
@@ -99,16 +147,59 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     setDraft(next);
     setSubmittedClaim(next);
     setApprovalState("Pending Intake");
+    setVertexState((current) => ({ ...current, review: null, enabled: false, mode: "deterministic" }));
     setWorkflowNote("Started a blank claim draft.");
     setActiveTab("submit");
   }
 
-  function runWorkflow(event) {
+  async function runWorkflow(event) {
     event.preventDefault();
     setSubmittedClaim(draft);
     setApprovalState("Pending Adjuster Review");
-    setWorkflowNote("ClaimsOps Agent workflow completed with deterministic tools.");
+    setWorkflowNote("Submitted claim and started ClaimsOps workflow.");
     setActiveTab("review");
+    await runVertexWorkflow(draft);
+  }
+
+  async function runVertexWorkflow(claim) {
+    setVertexState((current) => ({
+      ...current,
+      status: "running",
+      message: "Calling the ClaimsOps Vercel API route for Vertex AI review...",
+      review: null
+    }));
+
+    try {
+      const response = await fetch("/api/claimsops/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claim })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "ClaimsOps API route failed.");
+
+      const vertex = payload.vertex || {};
+      setVertexState((current) => ({
+        ...current,
+        ...vertex,
+        mode: payload.mode || "deterministic",
+        enabled: Boolean(vertex.enabled),
+        review: vertex.review || null
+      }));
+      setWorkflowNote(vertex.enabled
+        ? "ClaimsOps Agent workflow completed with Vertex AI live review and deterministic guardrails."
+        : `ClaimsOps Agent workflow completed with deterministic tools. ${vertex.message || ""}`.trim());
+    } catch (error) {
+      setVertexState((current) => ({
+        ...current,
+        status: "error",
+        mode: "deterministic",
+        enabled: false,
+        review: null,
+        message: `Vertex AI review failed; deterministic analysis is still available. ${error.message}`
+      }));
+      setWorkflowNote("ClaimsOps Agent workflow completed with deterministic tools; Vertex AI review failed.");
+    }
   }
 
   return (
@@ -159,17 +250,18 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         <div className="sidebar-status">
           <p className="section-label">CrewAI / Vertex AI</p>
           <StatusRow label="Runtime" value="Vercel Next.js" />
-          <StatusRow label="Workflow" value="Deterministic Agent Tools" />
+          <StatusRow label="Workflow" value={vertexState.enabled ? "Vertex AI + Tools" : "Deterministic Agent Tools"} />
+          <StatusRow label="Vertex" value={getVertexStatusLabel(vertexState.status)} />
           <StatusRow label="Human Gate" value={approvalState} />
-          <StatusRow label="Vertex Project" value="agenticai-500006" code />
-          <StatusRow label="Location" value="us-central1" code />
-          <StatusRow label="Model" value="gemini/gemini-2.0-flash" code />
+          <StatusRow label="Vertex Project" value={vertexState.projectId || "agenticai-500006"} code />
+          <StatusRow label="Location" value={vertexState.location || "us-central1"} code />
+          <StatusRow label="Model" value={vertexState.model || "gemini-2.0-flash"} code />
           <p className="muted">{workflowNote}</p>
         </div>
       </aside>
 
       <main className="main" id="main-content">
-        <Hero analysis={analysis} setActiveTab={setActiveTab} />
+        <Hero analysis={analysis} setActiveTab={setActiveTab} vertexState={vertexState} />
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <section className="tab-panel" aria-live="polite">
@@ -177,7 +269,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
             <SubmitClaimForm draft={draft} setDraft={setDraft} runWorkflow={runWorkflow} />
           )}
           {activeTab === "review" && (
-            <AgentReview analysis={analysis} approvalState={approvalState} />
+            <AgentReview analysis={analysis} approvalState={approvalState} vertexState={vertexState} />
           )}
           {activeTab === "communications" && (
             <Communications
@@ -206,7 +298,7 @@ function StatusRow({ label, value, code = false }) {
   );
 }
 
-function Hero({ analysis, setActiveTab }) {
+function Hero({ analysis, setActiveTab, vertexState }) {
   const { claim, coverage, evidence, risk, recommendation } = analysis;
   const evidencePercent = Math.round(evidence.completion * 100);
   const scoreAngle = `${risk.score * 3.6}deg`;
@@ -220,7 +312,7 @@ function Hero({ analysis, setActiveTab }) {
           A multi-agent workflow for intake, coverage, evidence review, risk routing,
           and customer communication across insurance lines.
         </p>
-        <CapabilityStrip setActiveTab={setActiveTab} />
+        <CapabilityStrip setActiveTab={setActiveTab} vertexState={vertexState} />
       </div>
       <div className="spotlight" aria-label="Active claim summary">
         <div className="spotlight-top">
@@ -269,7 +361,10 @@ function Hero({ analysis, setActiveTab }) {
   );
 }
 
-function CapabilityStrip({ setActiveTab }) {
+function CapabilityStrip({ setActiveTab, vertexState }) {
+  const vertexLive = vertexState.status === "live";
+  const vertexReady = vertexState.status === "ready";
+  const vertexMissing = vertexState.status === "missing_credentials";
   const items = [
     {
       icon: UserCheck,
@@ -289,11 +384,13 @@ function CapabilityStrip({ setActiveTab }) {
     },
     {
       icon: Sparkles,
-      title: "Vertex AI Optional",
-      status: "Configurable",
-      body: "Project settings are documented; a Vercel API route can be connected when credentials are added.",
-      action: "See Prompt Pack",
-      tab: "prompts"
+      title: "Vertex AI Live Review",
+      status: vertexLive ? "Live" : vertexReady ? "Ready" : vertexMissing ? "Needs credentials" : "API route wired",
+      body: vertexLive
+        ? "Gemini on Vertex AI added a live adjuster-facing explanation while deterministic tools stayed in control."
+        : "The Vercel API route is implemented. Add the service account env var to turn on live Gemini review.",
+      action: "View Review",
+      tab: "review"
     }
   ];
 
@@ -488,7 +585,7 @@ function AmountField({ value, onChange }) {
   );
 }
 
-function AgentReview({ analysis, approvalState }) {
+function AgentReview({ analysis, approvalState, vertexState }) {
   const { claim, coverage, evidence, risk, recommendation, history } = analysis;
   const evidencePercent = Math.round(evidence.completion * 100);
   const topDrivers = [...risk.contributions]
@@ -523,6 +620,8 @@ function AgentReview({ analysis, approvalState }) {
           <SeverityPill severity={risk.severity} />
         </div>
       </section>
+
+      <VertexReviewPanel vertexState={vertexState} />
 
       <div className="three-column">
         <ReasonCard
@@ -617,6 +716,63 @@ function AgentReview({ analysis, approvalState }) {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function VertexReviewPanel({ vertexState }) {
+  const review = vertexState.review;
+  const isLive = vertexState.status === "live";
+
+  return (
+    <section className={`panel vertex-panel ${isLive ? "live" : ""}`}>
+      <div className="panel-heading">
+        <div>
+          <h3>Vertex AI Live Review</h3>
+          <p>{vertexState.message}</p>
+        </div>
+        <span className={`runtime-badge ${isLive ? "live" : ""}`}>{getVertexStatusLabel(vertexState.status)}</span>
+      </div>
+
+      {review ? (
+        <div className="vertex-review-grid">
+          <div className="vertex-summary">
+            <span>Generated Adjuster Summary</span>
+            <p>{review.executive_summary}</p>
+          </div>
+          <VertexList title="How Vertex Read The Case" items={review.reasoning_steps} />
+          <VertexList title="Questions For The Adjuster" items={review.adjuster_questions} />
+          <VertexList title="Customer Next Steps" items={review.customer_next_steps} />
+          <VertexList title="Risk Caveats" items={review.risk_caveats} />
+        </div>
+      ) : (
+        <div className="vertex-empty">
+          <p>
+            The deterministic claims workflow is ready now. Vertex AI will add a live, plain-English review here
+            once the deployment has service account credentials with Vertex AI access.
+          </p>
+          <dl className="detail-list compact">
+            <div><dt>Project</dt><dd>{vertexState.projectId}</dd></div>
+            <div><dt>Project Number</dt><dd>{vertexState.projectNumber}</dd></div>
+            <div><dt>Location</dt><dd>{vertexState.location}</dd></div>
+            <div><dt>Model</dt><dd>{vertexState.model}</dd></div>
+          </dl>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function VertexList({ title, items }) {
+  if (!items?.length) return null;
+  return (
+    <div className="vertex-list">
+      <span>{title}</span>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -1065,4 +1221,27 @@ function formatDocLabel(value) {
 
 function numberFormat(value) {
   return new Intl.NumberFormat("en-US").format(Number(value || 0));
+}
+
+function getVertexStatusLabel(status) {
+  const labels = {
+    checking: "Checking",
+    ready: "Ready",
+    running: "Running",
+    live: "Live",
+    disabled: "Disabled",
+    missing_credentials: "Needs Credentials",
+    error: "Fallback Active"
+  };
+  return labels[status] || "Deterministic";
+}
+
+function getVertexConfigMessage(vertex) {
+  if (vertex.liveRequested && vertex.hasCredentials) {
+    return "Vertex AI live mode is configured. Load or submit a claim to generate a live review.";
+  }
+  if (vertex.liveRequested) {
+    return "Vertex AI live mode is requested, but service account credentials are missing.";
+  }
+  return "Vertex AI API route is available. Set VERTEX_AI_LIVE=true and add service account credentials to enable it.";
 }

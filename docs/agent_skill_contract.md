@@ -20,6 +20,7 @@ Use this workflow when a user submits, loads, or reviews an insurance claim acro
 | `risk_scoring_tool` | Applies deterministic severity and risk rules. | Priority, routing, and escalation recommendation. |
 | `next_action_tool` | Creates the recommended owner, SLA, and workflow action. | Whether the action is safe as a recommendation. |
 | `communication_draft_tool` | Drafts customer and adjuster messages. | Whether wording remains non-final and human-gated. |
+| `vertex_live_review_tool` | Calls Gemini on Vertex AI from the Vercel API route when credentials are configured. | Whether the live explanation is consistent with deterministic tool facts and human-gate constraints. |
 
 ## Specialist Agents
 
@@ -46,10 +47,11 @@ Use this workflow when a user submits, loads, or reviews an insurance claim acro
 - Recommended owner, SLA, next action, and human approval gate.
 - Customer and adjuster communication drafts.
 - Step-by-step agent trace for auditability.
+- Optional Vertex AI live review with plain-English reasoning, adjuster questions, customer next steps, and caveats.
 
 ## Verification
 
 - Deterministic mode returns a complete analysis for every sample claim.
-- Live CrewAI mode is optional and falls back safely if credentials, dependencies, or network calls fail.
+- Live CrewAI and Vercel Vertex AI modes are optional and fall back safely if credentials, dependencies, or network calls fail.
 - Streamlit UI keeps selected values and button text readable without hover.
 - Prompt Pack tab shows both this contract and the prompt/tool pack.
