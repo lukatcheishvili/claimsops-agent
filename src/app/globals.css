@@ -1027,8 +1027,8 @@ td {
 .workflow-canvas {
   position: relative;
   width: 100%;
-  min-height: 540px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--co-hairline-soft);
   border-radius: 8px;
   background:
@@ -1039,16 +1039,26 @@ td {
   background-size: 32px 32px, 32px 32px, auto, auto;
 }
 
+.workflow-board {
+  position: relative;
+  width: 1180px;
+  height: 540px;
+  margin: 0 auto;
+}
+
 .workflow-lines {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
+  width: 1180px;
+  height: 540px;
+  pointer-events: none;
+  overflow: visible;
 }
 
 .flow-node {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 10px;
@@ -1102,7 +1112,7 @@ td {
 
 .workflow-note {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   width: 120px;
   color: var(--co-muted);
   font-size: 12px;

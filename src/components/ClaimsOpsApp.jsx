@@ -861,42 +861,47 @@ function Architecture() {
         </div>
 
         <div className="workflow-canvas" role="img" aria-label="ClaimsOps agent workflow diagram">
-          <svg className="workflow-lines" viewBox="0 0 1180 540" aria-hidden="true">
-            <defs>
-              <linearGradient id="flowGradient" x1="0" x2="1" y1="0" y2="0">
-                <stop offset="0%" stopColor="#0099ff" />
-                <stop offset="52%" stopColor="#d44df0" />
-                <stop offset="100%" stopColor="#ff7a3d" />
-              </linearGradient>
-              <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-                <path d="M0 0 L10 5 L0 10 Z" fill="#d44df0" />
-              </marker>
-            </defs>
-            {specialistNodes.map((node) => (
-              <path
-                key={node.id}
-                d={`M292 ${node.y + 36} C 392 ${node.y + 36}, 384 270, 498 270`}
-                stroke="url(#flowGradient)"
-                strokeWidth="2.5"
-                fill="none"
-                markerEnd="url(#arrowHead)"
-              />
-            ))}
-            <path d="M666 270 C 740 270, 742 150, 824 150" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
-            <path d="M666 270 C 746 270, 750 270, 824 270" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
-            <path d="M666 270 C 740 270, 742 390, 824 390" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
-            <path d="M1004 390 C 1060 390, 1060 455, 1100 455" stroke="#22c55e" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
-          </svg>
+          <div className="workflow-board">
+            <svg className="workflow-lines" viewBox="0 0 1180 540" aria-hidden="true">
+              <defs>
+                <linearGradient id="flowGradient" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%" stopColor="#0099ff" />
+                  <stop offset="52%" stopColor="#d44df0" />
+                  <stop offset="100%" stopColor="#ff7a3d" />
+                </linearGradient>
+                <marker id="arrowHead" markerWidth="9" markerHeight="9" refX="7.2" refY="4.5" orient="auto">
+                  <path d="M0 0 L9 4.5 L0 9 Z" fill="#d44df0" />
+                </marker>
+                <marker id="approvalArrowHead" markerWidth="9" markerHeight="9" refX="7.2" refY="4.5" orient="auto">
+                  <path d="M0 0 L9 4.5 L0 9 Z" fill="#22c55e" />
+                </marker>
+              </defs>
+              {specialistNodes.map((node) => (
+                <path
+                  key={node.id}
+                  d={`M304 ${node.y + 36} C 390 ${node.y + 36}, 394 258, 490 258`}
+                  stroke="url(#flowGradient)"
+                  strokeWidth="2.5"
+                  fill="none"
+                  markerEnd="url(#arrowHead)"
+                />
+              ))}
+              <path d="M746 258 C 780 258, 784 138, 816 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
+              <path d="M746 258 C 782 258, 784 258, 816 258" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
+              <path d="M746 258 C 780 258, 784 378, 816 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
+              <path d="M1076 378 C 1116 378, 1112 450, 1146 450" stroke="#22c55e" strokeWidth="2.5" fill="none" markerEnd="url(#approvalArrowHead)" />
+            </svg>
 
-          {specialistNodes.map((node, index) => (
-            <FlowNode key={node.id} className="specialist" x={node.x} y={node.y} number={index + 1} title={node.label} detail={node.detail} />
-          ))}
-          <FlowNode className="supervisor" x={498} y={222} number={5} title="Supervisor Agent" detail="Chooses next tool and route" />
-          <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" />
-          <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" />
-          <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" />
-          <div className="workflow-note" style={{ left: 1000, top: 438 }}>
-            No final decision is automated.
+            {specialistNodes.map((node, index) => (
+              <FlowNode key={node.id} className="specialist" x={node.x} y={node.y} number={index + 1} title={node.label} detail={node.detail} />
+            ))}
+            <FlowNode className="supervisor" x={498} y={222} number={5} title="Supervisor Agent" detail="Chooses next tool and route" />
+            <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" />
+            <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" />
+            <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" />
+            <div className="workflow-note" style={{ left: 910, top: 430 }}>
+              No final decision is automated.
+            </div>
           </div>
         </div>
       </section>
