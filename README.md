@@ -1,5 +1,7 @@
 # ClaimsOps Agent
 
+**Live Demo:** [Open the Vercel MVP](https://claimsops-agent-git-main-lukatcheishvilis-projects.vercel.app/)
+
 Agentic AI MVP for **Insurance Claims Operations**. ClaimsOps Agent demonstrates how a multi-agent workflow can intake a claim, verify policy coverage, inspect evidence, score operational risk, recommend the next action, and draft customer and adjuster communications while keeping final decisions human-gated.
 
 The repository contains two working interfaces:
