@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  Bot,
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
+  Download,
   FileText,
   GitBranch,
   LayoutDashboard,
@@ -21,6 +23,8 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  UploadCloud,
+  Users,
   UserCheck
 } from "lucide-react";
 import {
@@ -57,11 +61,46 @@ import {
 
 const tabs = [
   { id: "submit", label: "Submit Claim", icon: FileText },
+  { id: "agent", label: "Agent Chat", icon: Bot },
   { id: "review", label: "Agent Review", icon: ShieldCheck },
   { id: "communications", label: "Communications", icon: MessageSquare },
   { id: "dashboard", label: "Operations Dashboard", icon: LayoutDashboard },
+  { id: "manager", label: "Manager View", icon: Users },
   { id: "architecture", label: "Architecture", icon: GitBranch },
   { id: "prompts", label: "Prompt Pack", icon: ClipboardList }
+];
+
+const demoSteps = [
+  {
+    tab: "submit",
+    title: "Submit Or Load A Claim",
+    body: "Start with a sample claim or enter a new claim. The intake form controls the facts every agent will use."
+  },
+  {
+    tab: "agent",
+    title: "Ask The ClaimsOps Agent",
+    body: "Use the chat to ask why the route was chosen, what evidence is missing, or whether the claim can move forward."
+  },
+  {
+    tab: "review",
+    title: "Review Agent Reasoning",
+    body: "Show the deterministic tool results, Vertex AI live review status, risk drivers, and auditable reasoning trace."
+  },
+  {
+    tab: "communications",
+    title: "Use The Human Approval Gate",
+    body: "Approve the recommended next action, request more evidence, or escalate manually. Every action is logged."
+  },
+  {
+    tab: "manager",
+    title: "Inspect Manager View",
+    body: "Switch to queue oversight: high-risk claims, SLA watchlist, evidence blockers, owner load, and approval activity."
+  },
+  {
+    tab: "architecture",
+    title: "Explain The Agent Architecture",
+    body: "Hover over each workflow box to explain why it exists, its role, and what it produces."
+  }
 ];
 
 const chartColors = {
@@ -103,6 +142,14 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [vertexState, setVertexState] = useState(initialVertexState);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [demoActive, setDemoActive] = useState(false);
+  const [demoStepIndex, setDemoStepIndex] = useState(0);
+  const [approvalLog, setApprovalLog] = useState(() => [
+    createApprovalLogEntry("System", "Sample claim loaded for deterministic demo mode.", sampleClaims[0].claim_id)
+  ]);
+  const [chatMessages, setChatMessages] = useState(() => [
+    createChatMessage("assistant", buildAgentGreeting(analyzeClaim(sampleClaims[0])))
+  ]);
   const analysis = useMemo(() => analyzeClaim(submittedClaim), [submittedClaim]);
   const selectedSample = sampleClaims[selectedIndex];
 
@@ -150,9 +197,12 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
 
   function loadSelectedClaim() {
     const sample = sampleClaims[selectedIndex];
+    const sampleAnalysis = analyzeClaim(sample);
     setDraft(sample);
     setSubmittedClaim(sample);
     setApprovalState("Pending Adjuster Review");
+    setApprovalLog([createApprovalLogEntry("System", "Sample claim loaded and workflow refreshed.", sample.claim_id)]);
+    setChatMessages([createChatMessage("assistant", buildAgentGreeting(sampleAnalysis))]);
     setWorkflowNote("Loaded sample claim and started ClaimsOps workflow.");
     setActiveTab("review");
     runVertexWorkflow(sample);
@@ -164,17 +214,65 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     setSubmittedClaim(next);
     setApprovalState("Pending Intake");
     setVertexState((current) => ({ ...current, review: null, enabled: false, mode: "deterministic" }));
+    setApprovalLog([createApprovalLogEntry("System", "Blank claim draft started.", next.claim_id)]);
+    setChatMessages([createChatMessage("assistant", "I started a blank claim. Fill the intake fields, then run the workflow so I can explain coverage, evidence, risk, and routing.")]);
     setWorkflowNote("Started a blank claim draft.");
     setActiveTab("submit");
   }
 
   async function runWorkflow(event) {
     event.preventDefault();
+    const nextAnalysis = analyzeClaim(draft);
     setSubmittedClaim(draft);
     setApprovalState("Pending Adjuster Review");
+    setApprovalLog((current) => [
+      createApprovalLogEntry("ClaimsOps Agent", `Workflow run completed. Recommended owner: ${nextAnalysis.recommendation.owner}.`, draft.claim_id),
+      ...current
+    ]);
+    setChatMessages((current) => [
+      ...current,
+      createChatMessage("assistant", buildAgentGreeting(nextAnalysis))
+    ]);
     setWorkflowNote("Submitted claim and started ClaimsOps workflow.");
     setActiveTab("review");
     await runVertexWorkflow(draft);
+  }
+
+  function handleApprovalAction(nextState, detail) {
+    setApprovalState(nextState);
+    setApprovalLog((current) => [
+      createApprovalLogEntry("Human Adjuster", detail, analysis.claim.claim_id),
+      ...current
+    ]);
+  }
+
+  function sendAgentMessage(message) {
+    const text = message.trim();
+    if (!text) return;
+    const reply = answerAgentQuestion(text, analysis, approvalState, vertexState, approvalLog);
+    setChatMessages((current) => [
+      ...current,
+      createChatMessage("user", text),
+      createChatMessage("assistant", reply)
+    ]);
+  }
+
+  function startGuidedDemo() {
+    setDemoActive(true);
+    setDemoStepIndex(0);
+    setActiveTab(demoSteps[0].tab);
+    setWorkflowNote("Guided demo mode started.");
+  }
+
+  function moveDemoStep(offset) {
+    const nextIndex = Math.max(0, Math.min(demoSteps.length - 1, demoStepIndex + offset));
+    setDemoStepIndex(nextIndex);
+    setActiveTab(demoSteps[nextIndex].tab);
+  }
+
+  function stopGuidedDemo() {
+    setDemoActive(false);
+    setWorkflowNote("Guided demo mode ended.");
   }
 
   async function runVertexWorkflow(claim) {
@@ -292,6 +390,14 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         <div className="canvas-controls" aria-label="Canvas controls">
           <button
             type="button"
+            className={`demo-control-button ${demoActive ? "active" : ""}`}
+            onClick={demoActive ? stopGuidedDemo : startGuidedDemo}
+          >
+            <Play aria-hidden="true" size={16} />
+            {demoActive ? "End Demo" : "Start Demo"}
+          </button>
+          <button
+            type="button"
             className="icon-button"
             aria-label={sidebarOpen ? "Hide controls panel" : "Show controls panel"}
             title={sidebarOpen ? "Hide controls panel" : "Show controls panel"}
@@ -311,6 +417,16 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
             {isFullscreen ? <Minimize2 aria-hidden="true" size={17} /> : <Maximize2 aria-hidden="true" size={17} />}
           </button>
         </div>
+        {demoActive && (
+          <DemoGuide
+            step={demoSteps[demoStepIndex]}
+            stepIndex={demoStepIndex}
+            totalSteps={demoSteps.length}
+            onPrevious={() => moveDemoStep(-1)}
+            onNext={() => moveDemoStep(1)}
+            onEnd={stopGuidedDemo}
+          />
+        )}
         <Hero analysis={analysis} setActiveTab={setActiveTab} vertexState={vertexState} />
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -318,17 +434,35 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           {activeTab === "submit" && (
             <SubmitClaimForm draft={draft} setDraft={setDraft} runWorkflow={runWorkflow} />
           )}
+          {activeTab === "agent" && (
+            <AgentChat
+              analysis={analysis}
+              approvalState={approvalState}
+              vertexState={vertexState}
+              approvalLog={approvalLog}
+              messages={chatMessages}
+              onSend={sendAgentMessage}
+            />
+          )}
           {activeTab === "review" && (
-            <AgentReview analysis={analysis} approvalState={approvalState} vertexState={vertexState} />
+            <AgentReview
+              analysis={analysis}
+              approvalState={approvalState}
+              vertexState={vertexState}
+              approvalLog={approvalLog}
+              onDownloadReport={() => downloadClaimReport(analysis, approvalState, approvalLog, vertexState)}
+            />
           )}
           {activeTab === "communications" && (
             <Communications
               analysis={analysis}
               approvalState={approvalState}
-              setApprovalState={setApprovalState}
+              approvalLog={approvalLog}
+              onApprovalAction={handleApprovalAction}
             />
           )}
           {activeTab === "dashboard" && <OperationsDashboard />}
+          {activeTab === "manager" && <ManagerDashboard approvalLog={approvalLog} />}
           {activeTab === "architecture" && <Architecture />}
           {activeTab === "prompts" && (
             <PromptPack promptPack={promptPack} skillContract={skillContract} />
@@ -345,6 +479,24 @@ function StatusRow({ label, value, code = false }) {
       <span>{label}</span>
       {code ? <code translate="no">{value}</code> : <strong>{value}</strong>}
     </div>
+  );
+}
+
+function DemoGuide({ step, stepIndex, totalSteps, onPrevious, onNext, onEnd }) {
+  const isFirst = stepIndex === 0;
+  const isLast = stepIndex === totalSteps - 1;
+  return (
+    <section className="demo-guide" aria-label="Guided demo mode">
+      <div>
+        <span>Demo Step {stepIndex + 1} / {totalSteps}</span>
+        <strong>{step.title}</strong>
+        <p>{step.body}</p>
+      </div>
+      <div className="demo-actions">
+        <button type="button" className="button ghost" onClick={onPrevious} disabled={isFirst}>Previous</button>
+        <button type="button" className="button secondary" onClick={isLast ? onEnd : onNext}>{isLast ? "Finish Demo" : "Next"}</button>
+      </div>
+    </section>
   );
 }
 
@@ -492,6 +644,9 @@ function Tabs({ activeTab, setActiveTab }) {
 }
 
 function SubmitClaimForm({ draft, setDraft, runWorkflow }) {
+  const draftAnalysis = analyzeClaim(draft);
+  const missingDocs = draftAnalysis.evidence.missing;
+
   function updateField(field, value) {
     setDraft((current) => ({ ...current, [field]: value }));
   }
@@ -501,6 +656,22 @@ function SubmitClaimForm({ draft, setDraft, runWorkflow }) {
       const submitted = new Set(current.documents || []);
       if (submitted.has(doc)) submitted.delete(doc);
       else submitted.add(doc);
+      return { ...current, documents: Array.from(submitted).sort() };
+    });
+  }
+
+  function addDocument(doc) {
+    setDraft((current) => {
+      const submitted = new Set(current.documents || []);
+      submitted.add(doc);
+      return { ...current, documents: Array.from(submitted).sort() };
+    });
+  }
+
+  function addAllMissingDocuments() {
+    setDraft((current) => {
+      const submitted = new Set(current.documents || []);
+      missingDocs.forEach((doc) => submitted.add(doc));
       return { ...current, documents: Array.from(submitted).sort() };
     });
   }
@@ -583,6 +754,33 @@ function SubmitClaimForm({ draft, setDraft, runWorkflow }) {
         ))}
       </fieldset>
 
+      <section className="evidence-simulator">
+        <div>
+          <UploadCloud aria-hidden="true" size={20} />
+          <div>
+            <h3>Evidence Upload Simulation</h3>
+            <p>
+              Evidence readiness is {Math.round(draftAnalysis.evidence.completion * 100)}%.
+              {missingDocs.length ? " Add missing evidence to see the review package improve." : " The current review package has all required evidence."}
+            </p>
+          </div>
+        </div>
+        {missingDocs.length ? (
+          <div className="simulation-actions">
+            {missingDocs.map((doc) => (
+              <button type="button" className="button ghost" key={doc} onClick={() => addDocument(doc)}>
+                Add {formatDocLabel(doc)}
+              </button>
+            ))}
+            <button type="button" className="button secondary" onClick={addAllMissingDocuments}>
+              Add All Missing Evidence
+            </button>
+          </div>
+        ) : (
+          <span className="status-pill ready">Evidence Ready</span>
+        )}
+      </section>
+
       <button type="submit" className="button primary wide">
         <Play aria-hidden="true" size={17} />
         Run ClaimsOps Agent Workflow
@@ -635,7 +833,77 @@ function AmountField({ value, onChange }) {
   );
 }
 
-function AgentReview({ analysis, approvalState, vertexState }) {
+function AgentChat({ analysis, approvalState, vertexState, approvalLog, messages, onSend }) {
+  const [draft, setDraft] = useState("");
+  const prompts = [
+    "What should happen next?",
+    "Why is this the risk score?",
+    "What evidence is missing?",
+    "Can this be approved automatically?",
+    "Explain the architecture"
+  ];
+
+  function submitMessage(event) {
+    event.preventDefault();
+    onSend(draft);
+    setDraft("");
+  }
+
+  return (
+    <div className="chat-layout">
+      <section className="panel chat-panel">
+        <div className="panel-heading">
+          <div>
+            <h3>ClaimsOps Agent Chat</h3>
+            <p>Ask about the active claim, routing logic, missing evidence, safety gates, or architecture.</p>
+          </div>
+          <span className="runtime-badge">{vertexState.enabled ? "Vertex Assisted" : "Deterministic"}</span>
+        </div>
+        <div className="chat-messages" aria-live="polite">
+          {messages.map((message) => (
+            <article className={`chat-message ${message.role}`} key={message.id}>
+              <span>{message.role === "assistant" ? "ClaimsOps Agent" : "You"}</span>
+              <p>{message.content}</p>
+            </article>
+          ))}
+        </div>
+        <form className="chat-input-row" onSubmit={submitMessage}>
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Ask the agent about this claim..."
+            aria-label="Ask the ClaimsOps Agent"
+          />
+          <button type="submit" className="button primary">
+            <Send aria-hidden="true" size={16} />
+            Send
+          </button>
+        </form>
+      </section>
+
+      <aside className="panel agent-context-panel">
+        <h3>Agent Context</h3>
+        <dl className="detail-list compact">
+          <div><dt>Claim</dt><dd>{analysis.claim.claim_id}</dd></div>
+          <div><dt>Risk</dt><dd>{analysis.risk.score}/100, {analysis.risk.severity}</dd></div>
+          <div><dt>Evidence</dt><dd>{analysis.evidence.missing.length ? `${analysis.evidence.missing.length} missing` : "Complete"}</dd></div>
+          <div><dt>Route</dt><dd>{analysis.recommendation.owner}</dd></div>
+          <div><dt>Human Gate</dt><dd>{approvalState}</dd></div>
+          <div><dt>Audit Events</dt><dd>{approvalLog.length}</dd></div>
+        </dl>
+        <div className="prompt-grid">
+          {prompts.map((prompt) => (
+            <button type="button" className="button ghost" key={prompt} onClick={() => onSend(prompt)}>
+              {prompt}
+            </button>
+          ))}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function AgentReview({ analysis, approvalState, vertexState, approvalLog, onDownloadReport }) {
   const { claim, coverage, evidence, risk, recommendation, history } = analysis;
   const evidencePercent = Math.round(evidence.completion * 100);
   const topDrivers = [...risk.contributions]
@@ -645,6 +913,17 @@ function AgentReview({ analysis, approvalState, vertexState }) {
 
   return (
     <div className="stack">
+      <section className="review-toolbar">
+        <div>
+          <span className="section-label">Review Package</span>
+          <strong>{claim.claim_id} analysis is ready for adjuster review.</strong>
+        </div>
+        <button type="button" className="button secondary" onClick={onDownloadReport}>
+          <Download aria-hidden="true" size={17} />
+          Download Claim Review
+        </button>
+      </section>
+
       <div className="metrics expanded">
         <Metric label="Risk Score" value={`${risk.score}/100`} detail={`${risk.severity} severity`} />
         <Metric label="Evidence" value={`${evidencePercent}%`} detail={`${evidence.missing.length} missing`} />
@@ -672,6 +951,7 @@ function AgentReview({ analysis, approvalState, vertexState }) {
       </section>
 
       <VertexReviewPanel vertexState={vertexState} />
+      <VertexStatusPanel vertexState={vertexState} />
 
       <div className="three-column">
         <ReasonCard
@@ -827,6 +1107,37 @@ function VertexList({ title, items }) {
   );
 }
 
+function VertexStatusPanel({ vertexState }) {
+  const statusItems = [
+    { label: "API Route", value: "/api/claimsops/analyze" },
+    { label: "Mode", value: vertexState.enabled ? "Live Vertex AI review" : "Deterministic fallback" },
+    { label: "Credentials", value: vertexState.hasCredentials ? "Configured" : "Not configured" },
+    { label: "Project", value: vertexState.projectId },
+    { label: "Location", value: vertexState.location },
+    { label: "Model", value: vertexState.model }
+  ];
+
+  return (
+    <section className="panel vertex-status-panel">
+      <div className="panel-heading">
+        <div>
+          <h3>Vertex Runtime Status</h3>
+          <p>Shows whether the live Gemini on Vertex AI path is actually active for this deployment.</p>
+        </div>
+        <span className={`runtime-badge ${vertexState.enabled ? "live" : ""}`}>{getVertexStatusLabel(vertexState.status)}</span>
+      </div>
+      <div className="vertex-status-grid">
+        {statusItems.map((item) => (
+          <div key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value || "Not set"}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ReasonCard({ icon: Icon, title, status, body }) {
   return (
     <section className="reason-card">
@@ -852,7 +1163,14 @@ function SeverityPill({ severity }) {
   return <span className={`severity ${severity.toLowerCase()}`}>{severity}</span>;
 }
 
-function Communications({ analysis, approvalState, setApprovalState }) {
+function Communications({ analysis, approvalState, approvalLog, onApprovalAction }) {
+  const missingEvidence = analysis.evidence.missing.map(formatDocLabel).join(", ");
+  const approvalDetail = `Approved recommended next action: ${analysis.recommendation.action}.`;
+  const evidenceDetail = missingEvidence
+    ? `Requested missing evidence: ${missingEvidence}.`
+    : "Requested adjuster confirmation even though required evidence is complete.";
+  const escalationDetail = `Manual escalation opened for ${analysis.recommendation.owner}.`;
+
   return (
     <div className="stack">
       <section className="approval-console">
@@ -878,19 +1196,39 @@ function Communications({ analysis, approvalState, setApprovalState }) {
         </section>
       </div>
       <div className="button-row">
-        <button type="button" className="button secondary" onClick={() => setApprovalState("Approved For Next Action")}>
+        <button type="button" className="button secondary" onClick={() => onApprovalAction("Approved For Next Action", approvalDetail)}>
           <CheckCircle2 aria-hidden="true" size={17} />
           Approve Next Action
         </button>
-        <button type="button" className="button secondary" onClick={() => setApprovalState("Evidence Requested")}>
+        <button type="button" className="button secondary" onClick={() => onApprovalAction("Evidence Requested", evidenceDetail)}>
           <Send aria-hidden="true" size={17} />
           Request More Evidence
         </button>
-        <button type="button" className="button secondary" onClick={() => setApprovalState("Manual Escalation Opened")}>
+        <button type="button" className="button secondary" onClick={() => onApprovalAction("Manual Escalation Opened", escalationDetail)}>
           <AlertTriangle aria-hidden="true" size={17} />
           Escalate Manually
         </button>
       </div>
+      <section className="panel audit-log-panel">
+        <div className="panel-heading">
+          <div>
+            <h3>Human Approval Action Log</h3>
+            <p>Every simulated adjuster action is captured so the demo shows how governance works.</p>
+          </div>
+        </div>
+        <div className="audit-log">
+          {approvalLog.map((entry) => (
+            <article className="audit-entry" key={entry.id}>
+              <span>{entry.time}</span>
+              <div>
+                <strong>{entry.actor}</strong>
+                <p>{entry.detail}</p>
+                <small>{entry.claimId}</small>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
       <p className="muted">Workflow actions remain gated by adjuster approval.</p>
     </div>
   );
@@ -1048,6 +1386,134 @@ function OperationsDashboard() {
               <small>Avg risk {owner.avgRisk}/100</small>
             </div>
           ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ManagerDashboard({ approvalLog }) {
+  const rows = dashboardRows();
+  const kpis = getDashboardKpis(rows);
+  const ownerData = getOwnerData(rows);
+  const highRisk = rows.filter((row) => row.severity === "High");
+  const evidenceBlocked = rows.filter((row) => row.missingDocs > 0);
+  const manualQueue = rows.filter((row) => !row.covered || row.severity === "High" || row.missingDocs > 0);
+  const urgentQueue = rows.filter((row) => row.sla.includes("4"));
+  const managerActions = [
+    {
+      label: "Staff high-risk review",
+      detail: `${highRisk.length} claim${highRisk.length === 1 ? "" : "s"} should stay with a senior adjuster or SIU.`
+    },
+    {
+      label: "Clear evidence blockers",
+      detail: `${evidenceBlocked.length} claim${evidenceBlocked.length === 1 ? "" : "s"} need customer document follow-up.`
+    },
+    {
+      label: "Protect the SLA queue",
+      detail: `${urgentQueue.length} claim${urgentQueue.length === 1 ? "" : "s"} have a 4 business hour review target.`
+    }
+  ];
+
+  return (
+    <div className="stack manager-stack">
+      <section className="manager-brief">
+        <div>
+          <span className="section-label">Highest-Value Additions</span>
+          <h3>Manager control room for the ClaimsOps agent.</h3>
+          <p>
+            This view turns the demo from a single-claim assistant into an operations tool: leaders can see
+            what is blocked, who owns it, what needs approval, and where the agent can reduce cycle time.
+          </p>
+        </div>
+        <Users aria-hidden="true" size={34} />
+      </section>
+
+      <div className="metrics dashboard-kpis">
+        <Metric label="Manual Queue" value={manualQueue.length} detail={`${kpis.manualReviewRate}% manual review rate`} />
+        <Metric label="Evidence Blocked" value={evidenceBlocked.length} detail="Need customer follow-up" />
+        <Metric label="High Risk" value={highRisk.length} detail="Senior review path" />
+        <Metric label="Urgent SLA" value={urgentQueue.length} detail="4 business hour target" />
+        <Metric label="Approval Events" value={approvalLog.length} detail="Current session audit log" />
+      </div>
+
+      <div className="manager-grid">
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <h3>Owner Load And Risk</h3>
+              <p>Claim volume by owner with average risk overlay.</p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={310}>
+            <ComposedChart data={ownerData} margin={{ top: 18, right: 20, bottom: 12, left: 0 }}>
+              <CartesianGrid stroke="#262626" strokeDasharray="4 4" />
+              <XAxis dataKey="owner" stroke="#999999" tick={{ fontSize: 11 }} />
+              <YAxis yAxisId="left" allowDecimals={false} stroke="#999999" />
+              <YAxis yAxisId="right" orientation="right" stroke="#999999" />
+              <Tooltip content={<DarkTooltip />} />
+              <Legend />
+              <Bar yAxisId="left" dataKey="count" name="Claims" fill={chartColors.blue} radius={[6, 6, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="avgRisk" name="Avg Risk" stroke={chartColors.coral} strokeWidth={3} dot />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </section>
+
+        <section className="panel manager-actions-panel">
+          <div className="panel-heading">
+            <div>
+              <h3>Manager Actions</h3>
+              <p>What a claims lead should do after the agent triage run.</p>
+            </div>
+          </div>
+          <div className="manager-action-list">
+            {managerActions.map((action, index) => (
+              <article key={action.label}>
+                <span>{index + 1}</span>
+                <div>
+                  <strong>{action.label}</strong>
+                  <p>{action.detail}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <h3>SLA Watchlist</h3>
+            <p>Claims that should receive manager attention before the next operating checkpoint.</p>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table className="manager-table">
+            <thead>
+              <tr>
+                <th>Claim</th>
+                <th>Customer</th>
+                <th>Risk</th>
+                <th>Blocked By</th>
+                <th>Owner</th>
+                <th>SLA</th>
+                <th>Next Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {manualQueue.map((row) => (
+                <tr key={row.claim}>
+                  <td>{row.claim}</td>
+                  <td>{row.customer}</td>
+                  <td><SeverityPill severity={row.severity} /> {row.riskScore}/100</td>
+                  <td>{row.missingDocs ? `${row.missingDocs} missing document${row.missingDocs === 1 ? "" : "s"}` : row.covered ? "Risk review" : "Coverage review"}</td>
+                  <td>{row.owner}</td>
+                  <td>{row.sla}</td>
+                  <td>{row.nextAction}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -1310,6 +1776,156 @@ function PromptPack({ promptPack, skillContract }) {
       </section>
     </div>
   );
+}
+
+function createChatMessage(role, content) {
+  return {
+    id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    role,
+    content
+  };
+}
+
+function createApprovalLogEntry(actor, detail, claimId) {
+  const now = new Date();
+  return {
+    id: `log-${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+    actor,
+    detail,
+    claimId,
+    date: now.toISOString(),
+    time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  };
+}
+
+function buildAgentGreeting(analysis) {
+  const missing = analysis.evidence.missing.length
+    ? `${analysis.evidence.missing.length} missing evidence item${analysis.evidence.missing.length === 1 ? "" : "s"}`
+    : "all required evidence present";
+  return `I reviewed ${analysis.claim.claim_id} for ${analysis.claim.customer_name}. The claim is ${analysis.risk.severity.toLowerCase()} risk at ${analysis.risk.score}/100, coverage status is ${analysis.coverage.status.replace("_", " ")}, and the evidence package has ${missing}. My current recommendation is: ${analysis.recommendation.action}.`;
+}
+
+function answerAgentQuestion(question, analysis, approvalState, vertexState, approvalLog) {
+  const q = question.toLowerCase();
+  const missing = analysis.evidence.missing.map(formatDocLabel);
+  const topDrivers = [...analysis.risk.contributions]
+    .filter((item) => item.label !== "Baseline intake risk")
+    .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
+    .slice(0, 3);
+
+  if (q.includes("evidence") || q.includes("document") || q.includes("missing")) {
+    return missing.length
+      ? `The evidence review agent found these missing items: ${missing.join(", ")}. That matters because settlement review should pause until the claim file contains the required documents for a ${analysis.claim.insurance_type.toLowerCase()} claim.`
+      : "The evidence review agent found that all required documents are present for this insurance line. The claim can move to the next human-reviewed step unless risk or coverage checks require a specialist.";
+  }
+
+  if (q.includes("risk") || q.includes("score") || q.includes("why")) {
+    const driverText = topDrivers.length
+      ? topDrivers.map((driver) => `${driver.label} (${driver.impact > 0 ? "+" : ""}${driver.impact}): ${driver.detail}`).join(" ")
+      : "No major risk drivers were detected beyond baseline intake review.";
+    return `The risk score is ${analysis.risk.score}/100, which is ${analysis.risk.severity.toLowerCase()} severity. Main drivers: ${driverText} The urgency is ${analysis.risk.urgency}.`;
+  }
+
+  if (q.includes("approve") || q.includes("automatic") || q.includes("human") || q.includes("gate")) {
+    return `No final decision should be automated. The current human gate is "${approvalState}". The agent can recommend, prioritize, and draft communications, but approval, denial, settlement, payment, or fraud escalation must stay with a human adjuster.`;
+  }
+
+  if (q.includes("next") || q.includes("route") || q.includes("action") || q.includes("owner")) {
+    return `Next action: ${analysis.recommendation.action}. Owner: ${analysis.recommendation.owner}. SLA: ${analysis.recommendation.sla}. Rationale: ${analysis.recommendation.rationale}`;
+  }
+
+  if (q.includes("coverage") || q.includes("policy")) {
+    const limit = analysis.coverage.limit ? ` The claim limit is EUR ${numberFormat(analysis.coverage.limit)} and deductible is EUR ${numberFormat(analysis.coverage.deductible)}.` : "";
+    return `Coverage status is ${analysis.coverage.status.replace("_", " ")}. ${analysis.coverage.reason}${limit}`;
+  }
+
+  if (q.includes("architecture") || q.includes("agent") || q.includes("workflow")) {
+    return "The architecture uses specialist agents for intake, coverage, evidence, risk, and communications. A supervisor agent combines their tool-backed outputs, selects the safest next route, and sends the case to a human approval gate before any final decision.";
+  }
+
+  if (q.includes("vertex") || q.includes("live") || q.includes("model")) {
+    return `Vertex status is "${getVertexStatusLabel(vertexState.status)}". Project ${vertexState.projectId}, location ${vertexState.location}, model ${vertexState.model}. If credentials are configured and live mode is enabled, the app adds a Vertex AI review while deterministic tools remain the source of truth.`;
+  }
+
+  if (q.includes("log") || q.includes("audit")) {
+    const latest = approvalLog[0];
+    return latest
+      ? `Latest audit event: ${latest.actor} at ${latest.time} for ${latest.claimId}: ${latest.detail}`
+      : "No approval events have been recorded yet. Use the Human Approval Gate controls to create an auditable action trail.";
+  }
+
+  return `For ${analysis.claim.claim_id}, I can explain evidence, risk, coverage, routing, Vertex status, architecture, or the approval audit log. Current recommendation: ${analysis.recommendation.action}.`;
+}
+
+function downloadClaimReport(analysis, approvalState, approvalLog, vertexState) {
+  const html = buildClaimReportHtml(analysis, approvalState, approvalLog, vertexState);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${analysis.claim.claim_id}-claimsops-review.html`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildClaimReportHtml(analysis, approvalState, approvalLog, vertexState) {
+  const rows = [
+    ["Claim ID", analysis.claim.claim_id],
+    ["Customer", analysis.claim.customer_name],
+    ["Insurance Line", analysis.claim.insurance_type],
+    ["Claim Amount", `EUR ${numberFormat(analysis.claim.claim_amount)}`],
+    ["Risk", `${analysis.risk.score}/100, ${analysis.risk.severity}`],
+    ["Coverage", `${analysis.coverage.status.replace("_", " ")} - ${analysis.coverage.reason}`],
+    ["Evidence", analysis.evidence.missing.length ? `Missing ${analysis.evidence.missing.map(formatDocLabel).join(", ")}` : "All required evidence is present"],
+    ["Recommendation", `${analysis.recommendation.action} (${analysis.recommendation.owner}, ${analysis.recommendation.sla})`],
+    ["Human Gate", approvalState],
+    ["Vertex Runtime", `${getVertexStatusLabel(vertexState.status)} - ${vertexState.projectId} / ${vertexState.model}`]
+  ];
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(analysis.claim.claim_id)} ClaimsOps Review</title>
+  <style>
+    body { margin: 40px; color: #171717; font-family: Inter, Arial, sans-serif; line-height: 1.5; }
+    h1 { margin-bottom: 4px; font-size: 34px; }
+    h2 { margin-top: 28px; border-bottom: 1px solid #d4d4d4; padding-bottom: 6px; font-size: 18px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #d4d4d4; padding: 10px; text-align: left; vertical-align: top; }
+    th { width: 220px; background: #f5f5f5; }
+    li { margin-bottom: 8px; }
+    .muted { color: #525252; }
+  </style>
+</head>
+<body>
+  <h1>ClaimsOps Agent Review</h1>
+  <p class="muted">Generated from the ClaimsOps MVP. Final insurance decisions remain human-owned.</p>
+  <h2>Decision Summary</h2>
+  <table>
+    <tbody>
+      ${rows.map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`).join("")}
+    </tbody>
+  </table>
+  <h2>Risk Drivers</h2>
+  <ul>${analysis.risk.contributions.map((item) => `<li><strong>${escapeHtml(item.label)}</strong> (${item.impact > 0 ? "+" : ""}${item.impact}): ${escapeHtml(item.detail)}</li>`).join("")}</ul>
+  <h2>Agent Reasoning Trace</h2>
+  <ol>${analysis.trace.map((step) => `<li><strong>${escapeHtml(step.agent)}</strong>: ${escapeHtml(step.decision)} ${escapeHtml(step.observation)} Tool: ${escapeHtml(formatToolLabel(step.tool_used))}.</li>`).join("")}</ol>
+  <h2>Approval Log</h2>
+  <ul>${approvalLog.map((entry) => `<li><strong>${escapeHtml(entry.actor)}</strong> at ${escapeHtml(entry.time)}: ${escapeHtml(entry.detail)}</li>`).join("")}</ul>
+</body>
+</html>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function getDashboardKpis(rows) {

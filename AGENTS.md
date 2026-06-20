@@ -1,10 +1,10 @@
 # Agent Instructions
 
-Read `docs/project/PRODUCT.md` and `docs/project/DESIGN.md` before changing this project.
+Read `agent.md`, `docs/project/PRODUCT.md`, and `docs/project/DESIGN.md` before changing this project.
 
 ## Project Contract
 
-ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preserve deterministic demo mode as the default. CrewAI and Vertex AI are optional live paths and must fail gracefully without breaking the demo. The repo has two user surfaces: the original Streamlit app in `claimsops/app.py` and the Vercel-ready Next.js replica in `src/app/`, `src/components/`, and `src/lib/`.
+ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preserve deterministic demo mode as the default. CrewAI and Vertex AI are optional live paths and must fail gracefully without breaking the demo. The repo has two user surfaces: the original Streamlit app in `claimsops/app.py` and the Vercel-ready Next.js replica in `src/app/`, `src/components/`, and `src/lib/`. The latest continuation notes, project rating, verification history, and open context live in `agent.md`.
 
 ## Agent Skill Best Practices
 
@@ -35,7 +35,7 @@ Run these from the project root:
 
 ```powershell
 .venv\Scripts\python -m py_compile claimsops\app.py claimsops\core\engine.py claimsops\core\crewai_adapter.py
-rg -n "transition:\s*all|outline:\s*none|outline-none|user-scalable|maximum-scale|onPaste" claimsops src .streamlit README.md docs -S
+rg -n --glob '!README.md' --glob '!AGENTS.md' "transition:\s*all|outline:\s*none|outline-none|user-scalable|maximum-scale|onPaste" claimsops src .streamlit docs -S
 pnpm build
 ```
 
