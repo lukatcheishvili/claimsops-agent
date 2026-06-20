@@ -23,7 +23,7 @@ export function getVertexRuntimeStatus() {
 
 export async function runVertexClaimsReview(analysis, overrides = {}) {
   const config = getVertexConfig(overrides);
-  const credentials = getServiceAccountCredentials();
+  const credentials = getServiceAccountCredentials(overrides);
 
   if (!config.liveRequested) {
     return buildStatus("disabled", config, "Vertex AI live mode is explicitly disabled. Set VERTEX_AI_LIVE=true or remove VERTEX_AI_LIVE=false in the deployment environment.", credentials);
@@ -46,7 +46,7 @@ export async function runVertexClaimsReview(analysis, overrides = {}) {
 
     if (!response.ok) {
       const text = await response.text();
-      return buildStatus("error", config, `Vertex AI request failed with HTTP ${response.status}: ${text.slice(0, 220)}`);
+      return buildStatus("error", config, `Vertex AI request failed with HTTP ${response.status}: ${text.slice(0, 220)}`, credentials);
     }
 
     const payload = await response.json();
@@ -58,7 +58,7 @@ export async function runVertexClaimsReview(analysis, overrides = {}) {
       generatedAt: new Date().toISOString()
     };
   } catch (error) {
-    return buildStatus("error", config, `Vertex AI live review failed: ${error.message}`);
+    return buildStatus("error", config, `Vertex AI live review failed: ${error.message}`, credentials);
   }
 }
 
@@ -124,7 +124,10 @@ function getLiveRequested(env) {
   return flags.some(isTruthy);
 }
 
-function getServiceAccountCredentials() {
+function getServiceAccountCredentials(overrides = {}) {
+  const overrideCredentials = parseCredentialJson(overrides.serviceAccountJson);
+  if (overrideCredentials) return overrideCredentials;
+
   const env = process.env;
   const rawJson = env.GOOGLE_SERVICE_ACCOUNT_JSON || env.GOOGLE_APPLICATION_CREDENTIALS_JSON || env.VERTEX_AI_SERVICE_ACCOUNT_JSON;
   if (rawJson) return parseCredentialJson(rawJson);

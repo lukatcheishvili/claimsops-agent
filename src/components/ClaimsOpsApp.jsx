@@ -136,7 +136,8 @@ const initialVertexConfig = {
   projectId: "agenticai-500006",
   projectNumber: "",
   location: "us-central1",
-  model: "gemini-2.0-flash"
+  model: "gemini-2.0-flash",
+  serviceAccountJson: ""
 };
 
 export default function ClaimsOpsApp({ promptPack, skillContract }) {
@@ -262,6 +263,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
       projectNumber: config.projectNumber.trim(),
       location: config.location.trim() || "us-central1",
       model: config.model.trim() || "gemini-2.0-flash",
+      serviceAccountJson: config.serviceAccountJson.trim(),
       liveRequested: true
     };
   }
@@ -276,6 +278,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
       location: nextConfig.location,
       model: nextConfig.model,
       liveRequested: true,
+      hasCredentials: Boolean(nextConfig.serviceAccountJson) || current.hasCredentials,
       message: "Vertex AI project settings applied. Running the active claim review..."
     }));
     setWorkflowNote("Vertex AI project settings applied; running active claim review.");
@@ -537,9 +540,7 @@ function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
   return (
     <form className="vertex-config-box" onSubmit={onSubmit}>
       <div className="vertex-config-title">
-        <span>
-          <Sparkles aria-hidden="true" size={15} />
-        </span>
+        <VertexLiveIcon status={vertexState.status} enabled={vertexState.enabled} />
         <div>
           <strong>Vertex AI Config</strong>
           <small>{getVertexStatusLabel(vertexState.status)}</small>
@@ -593,12 +594,35 @@ function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
         </label>
       </div>
 
+      <label htmlFor="vertex-service-account">
+        Service Account JSON
+        <input
+          id="vertex-service-account"
+          type="password"
+          value={config.serviceAccountJson}
+          onChange={(event) => onChange("serviceAccountJson", event.target.value)}
+          placeholder="Paste service account JSON or base64"
+          autoComplete="off"
+          spellCheck="false"
+        />
+      </label>
+
       <button type="submit" className="button secondary wide">
         <Sparkles aria-hidden="true" size={15} />
         Apply And Run
       </button>
-      <p>Project number stays masked in the UI. Live output still requires server-side Vertex credentials.</p>
+      <p>Project number and credential input stay masked. The credential is sent only for this run.</p>
     </form>
+  );
+}
+
+function VertexLiveIcon({ status, enabled }) {
+  const state = enabled || status === "live" ? "live" : status === "ready" ? "ready" : status === "missing_credentials" ? "warn" : "off";
+  const label = state === "live" ? "Vertex AI is live" : state === "ready" ? "Vertex AI is ready" : state === "warn" ? "Vertex AI needs credentials" : "Vertex AI is not live";
+  return (
+    <span className={`vertex-live-icon ${state}`} title={label} aria-label={label}>
+      <Activity aria-hidden="true" size={15} />
+    </span>
   );
 }
 

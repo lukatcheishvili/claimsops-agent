@@ -59,7 +59,7 @@ Guardrail:
 
 2026-06-20 pass:
 
-- Added a compact **Vertex AI Config** box in the left sidebar. It accepts Project ID, masked Project Number, location, and model, then reruns the active claim with those settings. The API validates these client-provided values and continues to return `***` for project number.
+- Added a compact **Vertex AI Config** box in the left sidebar. It accepts Project ID, masked Project Number, location, model, and a masked one-time service account JSON value, then reruns the active claim with those settings. The API validates client-provided project settings, parses the credential only for the active request, and continues to return `***` for project number.
 - Changed the Vercel Vertex AI runtime to request live mode by default for project `agenticai-500006`. The UI should no longer show **Disabled** unless `VERTEX_AI_LIVE=false` is explicitly set. If credentials are not present, it will show **Needs Credentials**.
 - Added local `.env.local` with non-secret Vertex project settings. It is ignored by Git and still requires a real `GOOGLE_SERVICE_ACCOUNT_JSON` value for live calls.
 - Added **Agent Chat** as a dedicated tab.

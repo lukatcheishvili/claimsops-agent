@@ -206,6 +206,59 @@ summary:focus-visible {
   color: var(--co-blue);
 }
 
+.vertex-live-icon {
+  position: relative;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--co-hairline);
+  border-radius: 7px;
+  background: var(--co-canvas);
+  color: var(--co-muted);
+}
+
+.vertex-live-icon::after {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 9px;
+  height: 9px;
+  content: "";
+  border: 2px solid var(--co-surface-1);
+  border-radius: 50%;
+  background: var(--co-muted);
+}
+
+.vertex-live-icon.live {
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #d9ffe7;
+}
+
+.vertex-live-icon.live::after {
+  background: var(--co-success);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.62);
+}
+
+.vertex-live-icon.ready {
+  border-color: rgba(0, 153, 255, 0.35);
+  color: #dff4ff;
+}
+
+.vertex-live-icon.ready::after {
+  background: var(--co-blue);
+  box-shadow: 0 0 14px rgba(0, 153, 255, 0.52);
+}
+
+.vertex-live-icon.warn {
+  border-color: rgba(255, 122, 61, 0.38);
+  color: #ffe4c8;
+}
+
+.vertex-live-icon.warn::after {
+  background: var(--co-orange);
+}
+
 .vertex-config-title strong,
 .vertex-config-title small {
   display: block;

@@ -119,7 +119,7 @@ VERTEX_AI_LIVE=false
 
 The service account must be allowed to call Vertex AI in project `agenticai-500006`. Do not commit the JSON key. After updating Vercel variables, redeploy the project. In the app, load or submit a claim and open **Agent Review**; the **Vertex AI Live Review** and **Vertex Runtime Status** panels will show either the live review or the exact fallback reason.
 
-The sidebar also has a **Vertex AI Config** box. Use it to enter the Project ID and Project Number for a specific demo run. The Project Number field is masked in the UI and in API status responses. This does not replace the service account secret; live output still requires server-side credentials in Vercel or local `.env.local`.
+The sidebar also has a **Vertex AI Config** box. Use it to enter the Project ID and Project Number for a specific demo run. The Project Number field is masked in the UI and in API status responses. To clear **Needs Credentials**, paste a service account JSON value into the masked credential field or configure `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel. The sidebar credential is sent only for the active request and is not committed to the repo.
 
 ## Run The Streamlit App
 
