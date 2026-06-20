@@ -1061,27 +1061,23 @@ function Architecture() {
                   <stop offset="52%" stopColor="#d44df0" />
                   <stop offset="100%" stopColor="#ff7a3d" />
                 </linearGradient>
-                <marker id="arrowHead" markerWidth="9" markerHeight="9" refX="7.2" refY="4.5" orient="auto">
-                  <path d="M0 0 L9 4.5 L0 9 Z" fill="#d44df0" />
-                </marker>
-                <marker id="approvalArrowHead" markerWidth="9" markerHeight="9" refX="7.2" refY="4.5" orient="auto">
-                  <path d="M0 0 L9 4.5 L0 9 Z" fill="#22c55e" />
-                </marker>
               </defs>
               {specialistNodes.map((node) => (
                 <path
                   key={node.id}
-                  d={`M304 ${node.y + 36} C 390 ${node.y + 36}, 394 258, 490 258`}
+                  d={`M292 ${node.y + 36} H 352 C 398 ${node.y + 36}, 398 258, 430 258`}
                   stroke="url(#flowGradient)"
                   strokeWidth="2.5"
                   fill="none"
-                  markerEnd="url(#arrowHead)"
                 />
               ))}
-              <path d="M746 258 C 780 258, 784 138, 816 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
-              <path d="M746 258 C 782 258, 784 258, 816 258" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
-              <path d="M746 258 C 780 258, 784 378, 816 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" markerEnd="url(#arrowHead)" />
-              <path d="M1076 378 C 1116 378, 1112 450, 1146 450" stroke="#22c55e" strokeWidth="2.5" fill="none" markerEnd="url(#approvalArrowHead)" />
+              <path d="M430 258 H 498" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M738 258 H 778 C 812 258, 792 138, 824 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M738 258 H 824" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M738 258 H 778 C 812 258, 792 378, 824 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M944 414 V 448" stroke="#22c55e" strokeWidth="2.5" fill="none" />
+              <circle cx="430" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
+              <circle cx="778" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
             </svg>
 
             {specialistNodes.map((node, index) => (
@@ -1091,8 +1087,9 @@ function Architecture() {
             <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" />
             <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" />
             <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" />
-            <div className="workflow-note" style={{ left: 910, top: 430 }}>
-              No final decision is automated.
+            <div className="workflow-terminal" style={{ left: 824, top: 448 }}>
+              <span>Human-Owned Outcome</span>
+              <strong>No final decision is automated.</strong>
             </div>
           </div>
         </div>
