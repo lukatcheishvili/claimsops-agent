@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 
 const DEFAULT_PROJECT_ID = "agenticai-500006";
-const DEFAULT_PROJECT_NUMBER = "808855388233";
+const DEFAULT_PROJECT_NUMBER = "***";
 const DEFAULT_LOCATION = "us-central1";
 const DEFAULT_MODEL = "gemini-2.0-flash";
 const DEFAULT_LIVE_REQUESTED = true;
@@ -13,7 +13,7 @@ export function getVertexRuntimeStatus() {
   const config = getVertexConfig();
   return {
     projectId: config.projectId,
-    projectNumber: config.projectNumber,
+    projectNumber: maskProjectNumber(config.projectNumber),
     location: config.location,
     model: config.model,
     liveRequested: config.liveRequested,
@@ -84,10 +84,14 @@ function buildStatus(status, config, message, credentials = getServiceAccountCre
     liveRequested: config.liveRequested,
     hasCredentials: Boolean(credentials),
     projectId: config.projectId,
-    projectNumber: config.projectNumber,
+    projectNumber: maskProjectNumber(config.projectNumber),
     location: config.location,
     model: config.model
   };
+}
+
+function maskProjectNumber(value) {
+  return value ? "***" : "***";
 }
 
 function getLiveRequested(env) {

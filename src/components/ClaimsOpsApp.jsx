@@ -125,7 +125,7 @@ const initialVertexState = {
   liveRequested: true,
   hasCredentials: false,
   projectId: "agenticai-500006",
-  projectNumber: "808855388233",
+  projectNumber: "***",
   location: "us-central1",
   model: "gemini-2.0-flash",
   message: "Checking Vertex AI runtime configuration...",

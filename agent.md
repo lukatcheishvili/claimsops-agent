@@ -155,7 +155,7 @@ Result:
 Project settings provided by the user:
 
 - Project ID: `agenticai-500006`
-- Project Number: `808855388233`
+- Project Number: `***`
 - Location: `us-central1`
 - Model: `gemini-2.0-flash`
 
@@ -164,7 +164,7 @@ Vercel environment variables needed:
 ```text
 GOOGLE_GENAI_USE_VERTEXAI=true
 GOOGLE_CLOUD_PROJECT=agenticai-500006
-GOOGLE_CLOUD_PROJECT_NUMBER=808855388233
+GOOGLE_CLOUD_PROJECT_NUMBER=***
 GOOGLE_CLOUD_LOCATION=us-central1
 VERTEX_AI_LIVE=true
 VERTEX_AI_MODEL=gemini-2.0-flash
