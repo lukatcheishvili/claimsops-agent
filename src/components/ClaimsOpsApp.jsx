@@ -207,7 +207,10 @@ function StatusRow({ label, value, code = false }) {
 }
 
 function Hero({ analysis, setActiveTab }) {
-  const { claim, risk, recommendation } = analysis;
+  const { claim, coverage, evidence, risk, recommendation } = analysis;
+  const evidencePercent = Math.round(evidence.completion * 100);
+  const scoreAngle = `${risk.score * 3.6}deg`;
+
   return (
     <header className="hero">
       <div className="hero-copy">
@@ -220,14 +223,47 @@ function Hero({ analysis, setActiveTab }) {
         <CapabilityStrip setActiveTab={setActiveTab} />
       </div>
       <div className="spotlight" aria-label="Active claim summary">
-        <span>Active Claim</span>
-        <div>
-          <strong>{risk.score}/100</strong>
-          <p>
-            {claim.claim_id} - {claim.insurance_type} - {risk.severity} Severity
-          </p>
+        <div className="spotlight-top">
+          <span className="spotlight-label">Active Claim</span>
+          <SeverityPill severity={risk.severity} />
         </div>
-        <p>{recommendation.action}</p>
+
+        <div className="spotlight-main">
+          <div className="spotlight-score" style={{ "--score-angle": scoreAngle }}>
+            <strong>{risk.score}</strong>
+            <span>/100</span>
+          </div>
+          <div className="spotlight-claim">
+            <span>{claim.claim_id}</span>
+            <strong>{claim.insurance_type} claim</strong>
+            <p>{claim.customer_name}</p>
+            <small>EUR {numberFormat(claim.claim_amount)} estimated exposure</small>
+          </div>
+        </div>
+
+        <div className="spotlight-kpis">
+          <div>
+            <span>Coverage</span>
+            <strong>{coverage.covered ? "Clear" : "Review"}</strong>
+          </div>
+          <div>
+            <span>Evidence</span>
+            <strong>{evidencePercent}%</strong>
+          </div>
+          <div>
+            <span>SLA</span>
+            <strong>{recommendation.sla}</strong>
+          </div>
+          <div>
+            <span>Owner</span>
+            <strong>{recommendation.owner}</strong>
+          </div>
+        </div>
+
+        <div className="spotlight-action">
+          <span>Recommended Action</span>
+          <p>{recommendation.action}</p>
+        </div>
       </div>
     </header>
   );

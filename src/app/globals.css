@@ -325,11 +325,11 @@ code {
 .spotlight {
   position: relative;
   overflow: hidden;
-  min-height: 320px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 30px;
+  min-height: 360px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 18px;
+  padding: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   background:
@@ -353,20 +353,151 @@ code {
   z-index: 1;
 }
 
-.spotlight span,
-.spotlight p {
+.spotlight-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.spotlight-label {
+  color: var(--co-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.spotlight-main {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.spotlight-score {
+  --score-angle: 0deg;
+  position: relative;
+  display: grid;
+  width: 132px;
+  height: 132px;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    conic-gradient(rgba(255, 255, 255, 0.95) var(--score-angle), rgba(255, 255, 255, 0.16) 0),
+    rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.34), 0 20px 48px rgba(0, 0, 0, 0.26);
+}
+
+.spotlight-score::before {
+  position: absolute;
+  inset: 9px;
+  content: "";
+  border-radius: inherit;
+  background: rgba(5, 5, 5, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.spotlight-score strong,
+.spotlight-score span {
+  position: relative;
+  z-index: 1;
+  color: var(--co-ink);
+}
+
+.spotlight-score strong {
+  align-self: end;
+  font-size: 42px;
+  font-weight: 680;
+  line-height: 0.94;
+}
+
+.spotlight-score span {
+  align-self: start;
+  color: var(--co-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.spotlight-claim {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.spotlight-claim span,
+.spotlight-kpis span,
+.spotlight-action span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 680;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.spotlight-claim strong {
+  color: var(--co-ink);
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.05;
+}
+
+.spotlight-claim p,
+.spotlight-claim small,
+.spotlight-action p {
   margin: 0;
   color: var(--co-body);
-  font-size: 14px;
   line-height: 1.45;
 }
 
-.spotlight strong {
-  display: block;
+.spotlight-claim p {
+  font-size: 15px;
+}
+
+.spotlight-claim small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.spotlight-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.spotlight-kpis div,
+.spotlight-action {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(10px);
+}
+
+.spotlight-kpis div {
+  display: grid;
+  gap: 5px;
+}
+
+.spotlight-kpis strong {
+  min-width: 0;
   color: var(--co-ink);
-  font-size: 40px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotlight-action {
+  display: grid;
+  gap: 6px;
+}
+
+.spotlight-action p {
+  color: var(--co-ink);
+  font-size: 14px;
   font-weight: 620;
-  line-height: 1;
 }
 
 .tabs {
@@ -1152,6 +1283,10 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .spotlight {
+    min-height: 340px;
+  }
+
   .driver-grid,
   .owner-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1200,6 +1335,24 @@ td {
 
   .hero h2 {
     font-size: 40px;
+  }
+
+  .spotlight {
+    padding: 18px;
+  }
+
+  .spotlight-main {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .spotlight-score {
+    width: 116px;
+    height: 116px;
+  }
+
+  .spotlight-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .metrics,
