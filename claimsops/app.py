@@ -42,12 +42,19 @@ def inject_css() -> None:
             --co-success: #22c55e;
         }
 
+        :root,
+        html {
+            color-scheme: dark;
+        }
+
         html, body, [data-testid="stAppViewContainer"], .stApp {
             background: var(--co-canvas);
             color: var(--co-ink);
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             font-feature-settings: "cv01", "cv05", "cv09", "cv11", "ss03", "ss07", "tnum";
             letter-spacing: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: rgba(0,153,255,0.18);
         }
 
         .block-container {
@@ -72,6 +79,10 @@ def inject_css() -> None:
             letter-spacing: 0;
         }
 
+        p, li, div, span {
+            overflow-wrap: anywhere;
+        }
+
         a {
             color: var(--co-blue) !important;
         }
@@ -84,9 +95,9 @@ def inject_css() -> None:
         [data-testid="stSidebar"] h1,
         [data-testid="stSidebar"] h2,
         [data-testid="stSidebar"] h3,
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] span,
-        [data-testid="stSidebar"] label {
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
             color: var(--co-ink);
         }
 
@@ -125,36 +136,84 @@ def inject_css() -> None:
             font-weight: 650;
             padding: 10px 15px;
             box-shadow: none;
+            touch-action: manipulation;
             transition: transform 140ms ease, box-shadow 140ms ease;
         }
 
+        .stButton > button *,
+        .stFormSubmitButton > button * {
+            color: inherit !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        [data-testid="stSidebar"] .stButton > button {
+            background: var(--co-surface-2);
+            color: var(--co-ink);
+            border: 1px solid var(--co-hairline);
+        }
+
         .stButton > button:hover,
-        .stFormSubmitButton > button:hover {
+        .stFormSubmitButton > button:hover,
+        .stButton > button:active,
+        .stFormSubmitButton > button:active {
             color: #000000;
             border: 0;
             transform: translateY(-1px);
             box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        .stButton > button:focus,
-        .stFormSubmitButton > button:focus,
-        input:focus,
-        textarea:focus {
+        [data-testid="stSidebar"] .stButton > button:hover,
+        [data-testid="stSidebar"] .stButton > button:active {
+            background: #242424;
+            color: var(--co-ink);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .stButton > button:focus-visible,
+        .stFormSubmitButton > button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible {
             box-shadow: 0 0 0 1px rgba(0,153,255,0.35) !important;
-            outline: none !important;
+            outline: 1px solid rgba(0,153,255,0.55) !important;
+            outline-offset: 2px !important;
         }
 
         [data-baseweb="input"] > div,
         [data-baseweb="textarea"] textarea,
         [data-baseweb="select"] > div,
-        [data-baseweb="datepicker"] > div {
+        [data-baseweb="datepicker"] > div,
+        [data-baseweb="base-input"] {
             background: var(--co-surface-1) !important;
             border: 1px solid var(--co-hairline) !important;
             border-radius: 10px !important;
             color: var(--co-ink) !important;
         }
 
-        input, textarea {
+        [data-baseweb="select"] span,
+        [data-baseweb="select"] div,
+        [data-baseweb="popover"] div,
+        [role="listbox"] div,
+        [role="option"] {
+            color: var(--co-ink) !important;
+        }
+
+        [data-baseweb="popover"],
+        [role="listbox"] {
+            background: var(--co-surface-1) !important;
+            border: 1px solid var(--co-hairline) !important;
+            border-radius: 10px !important;
+        }
+
+        [role="option"]:hover,
+        [role="option"][aria-selected="true"] {
+            background: var(--co-surface-2) !important;
+            color: var(--co-ink) !important;
+        }
+
+        input, textarea, select {
+            background-color: var(--co-surface-1) !important;
             color: var(--co-ink) !important;
             caret-color: var(--co-blue);
         }
@@ -172,6 +231,13 @@ def inject_css() -> None:
             min-height: 40px;
         }
 
+        [data-testid="stTabs"] [role="tab"] *,
+        [data-testid="stTabs"] [aria-selected="true"] * {
+            color: inherit !important;
+        }
+
+        [data-testid="stTabs"] [role="tab"]:hover,
+        [data-testid="stTabs"] [role="tab"]:focus-visible,
         [data-testid="stTabs"] [aria-selected="true"] {
             color: var(--co-ink);
             background: var(--co-surface-2);
@@ -195,6 +261,11 @@ def inject_css() -> None:
             border-radius: 10px;
         }
 
+        [data-testid="stExpander"] summary,
+        [data-testid="stExpander"] summary * {
+            color: var(--co-ink) !important;
+        }
+
         [data-testid="stAlert"] {
             border-radius: 20px;
             border: 1px solid var(--co-hairline);
@@ -211,6 +282,7 @@ def inject_css() -> None:
         }
 
         .co-hero-copy {
+            min-width: 0;
             min-height: 290px;
             display: flex;
             flex-direction: column;
@@ -233,6 +305,7 @@ def inject_css() -> None:
             line-height: 0.98;
             letter-spacing: 0;
             max-width: 760px;
+            text-wrap: balance;
         }
 
         .co-subtitle {
@@ -241,6 +314,7 @@ def inject_css() -> None:
             font-size: 18px;
             line-height: 1.3;
             margin-top: 18px;
+            text-wrap: pretty;
         }
 
         .co-pill-row {
@@ -345,6 +419,7 @@ def inject_css() -> None:
             font-size: 24px;
             line-height: 1.2;
             font-weight: 500;
+            text-wrap: balance;
         }
 
         .status-pill {
@@ -456,7 +531,7 @@ def sidebar() -> None:
     selected = st.sidebar.selectbox("Load sample claim", labels)
     sample = samples[labels.index(selected)]
 
-    if st.sidebar.button("Load selected claim", width="stretch"):
+    if st.sidebar.button("Load Selected Claim", width="stretch"):
         st.session_state.claim = sample
         st.session_state.analysis = analyze_claim(sample)
         st.session_state.live_note = None
@@ -523,7 +598,7 @@ def claim_form() -> None:
             value=claim.get("description", ""),
             height=110,
         )
-        submitted = st.form_submit_button("Run ClaimsOps Agent workflow", width="stretch")
+        submitted = st.form_submit_button("Run ClaimsOps Agent Workflow", width="stretch")
 
     if submitted:
         st.session_state.claim = claim
@@ -567,7 +642,7 @@ def review_panel(analysis: dict[str, Any]) -> None:
         st.write(f"**Owner:** {recommendation['owner']}")
         st.write(f"**Human approval gate:** {recommendation['human_gate']}")
 
-        st.subheader("Coverage check")
+        st.subheader("Coverage Check")
         st.write(coverage["reason"])
         if coverage["deductible"] is not None:
             st.write(f"**Deductible:** EUR {coverage['deductible']:,}")
@@ -576,18 +651,18 @@ def review_panel(analysis: dict[str, Any]) -> None:
             st.write("**Exclusions:** " + ", ".join(coverage["exclusions"]))
 
     with right:
-        st.subheader("Evidence checklist")
+        st.subheader("Evidence Checklist")
         if evidence["missing"]:
             st.warning("Missing documents: " + ", ".join(evidence["missing"]))
         else:
             st.success("All required documents are present.")
         st.write("**Submitted:** " + (", ".join(evidence["submitted"]) or "None"))
 
-        st.subheader("Risk signals")
+        st.subheader("Risk Signals")
         for signal in risk["signals"]:
             st.write(f"- {signal}")
 
-    st.subheader("Agent trace")
+    st.subheader("Agent Trace")
     for index, step in enumerate(analysis["trace"], start=1):
         with st.expander(f"{index}. {step['agent']} - {step['tool_used']}", expanded=index == 1):
             st.write(f"**Decision:** {step['decision']}")
@@ -605,16 +680,16 @@ def communications_panel(analysis: dict[str, Any]) -> None:
     communications = analysis["communications"]
     left, right = st.columns(2)
     with left:
-        st.subheader("Customer update draft")
+        st.subheader("Customer Update Draft")
         st.text_area("Customer message", communications["customer_message"], height=170)
     with right:
-        st.subheader("Adjuster note draft")
+        st.subheader("Adjuster Note Draft")
         st.text_area("Internal note", communications["adjuster_note"], height=170)
 
     approval_cols = st.columns(3)
-    approval_cols[0].button("Approve next action", width="stretch")
-    approval_cols[1].button("Request more evidence", width="stretch")
-    approval_cols[2].button("Escalate manually", width="stretch")
+    approval_cols[0].button("Approve Next Action", width="stretch")
+    approval_cols[1].button("Request More Evidence", width="stretch")
+    approval_cols[2].button("Escalate Manually", width="stretch")
     st.caption("Workflow actions remain gated by adjuster approval.")
 
 
@@ -636,20 +711,20 @@ def dashboard() -> None:
         )
     frame = pd.DataFrame(rows)
 
-    st.subheader("Claims operations queue")
+    st.subheader("Claims Operations Queue")
     st.dataframe(frame, width="stretch", hide_index=True)
 
     chart_cols = st.columns(2)
     with chart_cols[0]:
-        st.caption("Severity mix")
+        st.caption("Severity Mix")
         st.bar_chart(frame.groupby("Severity").size())
     with chart_cols[1]:
-        st.caption("Claims by insurance line")
+        st.caption("Claims by Insurance Line")
         st.bar_chart(frame.groupby("Line").size())
 
 
 def architecture() -> None:
-    st.subheader("Agentic architecture")
+    st.subheader("Agentic Architecture")
     st.graphviz_chart(
         """
         digraph {
@@ -702,12 +777,12 @@ def main() -> None:
 
     tab_submit, tab_review, tab_comms, tab_dashboard, tab_architecture, tab_prompts = st.tabs(
         [
-            "Submit claim",
-            "Agent review",
+            "Submit Claim",
+            "Agent Review",
             "Communications",
-            "Operations dashboard",
+            "Operations Dashboard",
             "Architecture",
-            "Prompt pack",
+            "Prompt Pack",
         ]
     )
 
