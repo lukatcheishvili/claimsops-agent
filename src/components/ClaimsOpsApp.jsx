@@ -1085,11 +1085,85 @@ function DarkTooltip({ active, payload, label }) {
 
 function Architecture() {
   const specialistNodes = [
-    { id: "intake", label: "Claims Intake", detail: "Normalize claim details", x: 52, y: 70 },
-    { id: "coverage", label: "Coverage Verification", detail: "Policy, dates, limits", x: 52, y: 174 },
-    { id: "evidence", label: "Evidence Review", detail: "Required vs submitted", x: 52, y: 278 },
-    { id: "risk", label: "Risk Triage", detail: "Severity and signals", x: 52, y: 382 }
+    {
+      id: "intake",
+      label: "Claims Intake",
+      detail: "Normalize claim details",
+      x: 52,
+      y: 70,
+      tooltipSide: "right-down",
+      info: {
+        why: "Claims arrive with mixed formats, missing fields, and line-specific context. Intake creates the clean record every later agent can trust.",
+        role: "Identifies the insurance line, customer, policy, incident dates, amount, location, description, and submitted evidence.",
+        output: "A normalized claim package for coverage, evidence, and risk review."
+      }
+    },
+    {
+      id: "coverage",
+      label: "Coverage Verification",
+      detail: "Policy, dates, limits",
+      x: 52,
+      y: 174,
+      tooltipSide: "right",
+      info: {
+        why: "The workflow should not move toward settlement until policy fit is clear or flagged for human review.",
+        role: "Checks policy status, coverage window, insurance line match, limits, deductible, and exclusions.",
+        output: "Coverage status, review reason, limits, and deductible context."
+      }
+    },
+    {
+      id: "evidence",
+      label: "Evidence Review",
+      detail: "Required vs submitted",
+      x: 52,
+      y: 278,
+      tooltipSide: "right",
+      info: {
+        why: "Missing evidence is one of the most common reasons claims operations slow down.",
+        role: "Compares submitted files with the required checklist for the selected insurance line.",
+        output: "Evidence readiness percentage plus any missing documents to request."
+      }
+    },
+    {
+      id: "risk",
+      label: "Risk Triage",
+      detail: "Severity and signals",
+      x: 52,
+      y: 382,
+      tooltipSide: "right-up",
+      info: {
+        why: "Claims teams need a consistent way to prioritize high exposure, urgent, or unusual cases.",
+        role: "Scores claim amount, evidence gaps, coverage uncertainty, history, reporting delay, and description signals.",
+        output: "Risk score, severity, urgency, and signals for routing."
+      }
+    }
   ];
+
+  const supervisorInfo = {
+    why: "Specialist outputs need one orchestrator that chooses the next safe operational step.",
+    role: "Combines intake, coverage, evidence, and risk facts, then selects the route without making a final claim decision.",
+    output: "Recommended owner, SLA, next action, and human approval gate."
+  };
+  const toolInfo = {
+    why: "Agents should rely on structured tools instead of inventing policy or history facts.",
+    role: "Provides deterministic lookup, checklist, history, risk, routing, and draft-generation functions.",
+    output: "Auditable tool results used as the source of truth."
+  };
+  const communicationInfo = {
+    why: "Claims teams need clear messages, but language must stay non-final and human-gated.",
+    role: "Drafts customer updates and internal adjuster notes from the verified workflow facts.",
+    output: "Communication drafts ready for adjuster review."
+  };
+  const humanGateInfo = {
+    why: "Insurance decisions can affect payments, denials, settlements, and customer rights.",
+    role: "Requires an adjuster to validate the recommendation before any final action.",
+    output: "Approve next action, request more evidence, or escalate manually."
+  };
+  const outcomeInfo = {
+    why: "The architecture must make clear where automation stops.",
+    role: "Marks the boundary between agent recommendation and human-owned claim decision.",
+    output: "A documented control point: no approval, denial, settlement, payment, or fraud accusation is automated."
+  };
 
   return (
     <div className="stack">
@@ -1130,15 +1204,31 @@ function Architecture() {
             </svg>
 
             {specialistNodes.map((node, index) => (
-              <FlowNode key={node.id} className="specialist" x={node.x} y={node.y} number={index + 1} title={node.label} detail={node.detail} />
+              <FlowNode
+                key={node.id}
+                className="specialist"
+                x={node.x}
+                y={node.y}
+                number={index + 1}
+                title={node.label}
+                detail={node.detail}
+                info={node.info}
+                tooltipSide={node.tooltipSide}
+              />
             ))}
-            <FlowNode className="supervisor" x={498} y={222} number={5} title="Supervisor Agent" detail="Chooses next tool and route" />
-            <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" />
-            <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" />
-            <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" />
-            <div className="workflow-terminal" style={{ left: 824, top: 432 }}>
+            <FlowNode className="supervisor" x={498} y={222} number={5} title="Supervisor Agent" detail="Chooses next tool and route" info={supervisorInfo} tooltipSide="bottom" />
+            <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" info={toolInfo} tooltipSide="left-down" />
+            <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" info={communicationInfo} tooltipSide="left" />
+            <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" info={humanGateInfo} tooltipSide="left-up" />
+            <div
+              className="workflow-terminal"
+              style={{ left: 824, top: 432 }}
+              tabIndex={0}
+              aria-describedby="architecture-outcome-popover"
+            >
               <span>Human-Owned Outcome</span>
               <strong>No final decision is automated.</strong>
+              <InfoPopover id="architecture-outcome-popover" title="Human-Owned Outcome" info={outcomeInfo} side="left-up" />
             </div>
           </div>
         </div>
@@ -1168,12 +1258,41 @@ function Architecture() {
   );
 }
 
-function FlowNode({ className, x, y, number, title, detail }) {
+function FlowNode({ className, x, y, number, title, detail, info, tooltipSide = "right" }) {
+  const popoverId = `architecture-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-popover`;
   return (
-    <div className={`flow-node ${className}`} style={{ left: x, top: y }}>
+    <div
+      className={`flow-node ${className}`}
+      style={{ left: x, top: y }}
+      tabIndex={0}
+      aria-describedby={popoverId}
+    >
       <span>{number}</span>
       <strong>{title}</strong>
       <small>{detail}</small>
+      <InfoPopover id={popoverId} title={title} info={info} side={tooltipSide} />
+    </div>
+  );
+}
+
+function InfoPopover({ id, title, info, side }) {
+  return (
+    <div id={id} role="tooltip" className={`architecture-popover ${side}`}>
+      <strong>{title}</strong>
+      <dl>
+        <div>
+          <dt>Why It Is Here</dt>
+          <dd>{info.why}</dd>
+        </div>
+        <div>
+          <dt>Role</dt>
+          <dd>{info.role}</dd>
+        </div>
+        <div>
+          <dt>Output</dt>
+          <dd>{info.output}</dd>
+        </div>
+      </dl>
     </div>
   );
 }

@@ -1379,6 +1379,21 @@ td {
   border-radius: 10px;
   background: rgba(20, 20, 20, 0.94);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  cursor: help;
+}
+
+.flow-node:hover,
+.flow-node:focus-within,
+.workflow-terminal:hover,
+.workflow-terminal:focus-within {
+  z-index: 40;
+}
+
+.flow-node:focus-visible,
+.workflow-terminal:focus-visible {
+  box-shadow: 0 0 0 1px rgba(0, 153, 255, 0.35), 0 0 0 4px rgba(0, 153, 255, 0.12), 0 18px 48px rgba(0, 0, 0, 0.28);
+  outline: 1px solid rgba(0, 153, 255, 0.7);
+  outline-offset: 4px;
 }
 
 .flow-node::before,
@@ -1468,6 +1483,7 @@ td {
   border-radius: 10px;
   background: rgba(10, 44, 25, 0.82);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  cursor: help;
 }
 
 .workflow-terminal span {
@@ -1481,6 +1497,193 @@ td {
   color: var(--co-ink);
   font-size: 14px;
   line-height: 1.35;
+}
+
+.architecture-popover {
+  position: absolute;
+  z-index: 60;
+  width: 310px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(8, 8, 8, 0.96);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.48);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.architecture-popover::before {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  content: "";
+  border: inherit;
+  border-right: 0;
+  border-bottom: 0;
+  background: inherit;
+}
+
+.architecture-popover.right,
+.architecture-popover.right-down,
+.architecture-popover.right-up {
+  left: calc(100% + 18px);
+}
+
+.architecture-popover.right {
+  top: 50%;
+  transform: translateY(calc(-50% + 4px));
+}
+
+.architecture-popover.right-down {
+  top: 0;
+}
+
+.architecture-popover.right-up {
+  bottom: 0;
+}
+
+.architecture-popover.right::before,
+.architecture-popover.right-down::before,
+.architecture-popover.right-up::before {
+  left: -6px;
+  transform: rotate(-45deg);
+}
+
+.architecture-popover.right::before {
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.architecture-popover.right-down::before {
+  top: 22px;
+}
+
+.architecture-popover.right-up::before {
+  bottom: 22px;
+}
+
+.architecture-popover.left,
+.architecture-popover.left-down,
+.architecture-popover.left-up {
+  right: calc(100% + 18px);
+}
+
+.architecture-popover.left {
+  top: 50%;
+  transform: translateY(calc(-50% + 4px));
+}
+
+.architecture-popover.left-down {
+  top: 0;
+}
+
+.architecture-popover.left-up {
+  bottom: 0;
+}
+
+.architecture-popover.left::before,
+.architecture-popover.left-down::before,
+.architecture-popover.left-up::before {
+  right: -6px;
+  transform: rotate(135deg);
+}
+
+.architecture-popover.left::before {
+  top: 50%;
+  transform: translateY(-50%) rotate(135deg);
+}
+
+.architecture-popover.left-down::before {
+  top: 22px;
+}
+
+.architecture-popover.left-up::before {
+  bottom: 22px;
+}
+
+.architecture-popover.bottom {
+  top: calc(100% + 18px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+}
+
+.architecture-popover.bottom::before {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.flow-node:hover .architecture-popover,
+.flow-node:focus-within .architecture-popover,
+.workflow-terminal:hover .architecture-popover,
+.workflow-terminal:focus-within .architecture-popover {
+  opacity: 1;
+}
+
+.flow-node:hover .architecture-popover.right,
+.flow-node:focus-within .architecture-popover.right {
+  transform: translateY(-50%);
+}
+
+.flow-node:hover .architecture-popover.left,
+.flow-node:focus-within .architecture-popover.left {
+  transform: translateY(-50%);
+}
+
+.flow-node:hover .architecture-popover.right-down,
+.flow-node:focus-within .architecture-popover.right-down,
+.flow-node:hover .architecture-popover.right-up,
+.flow-node:focus-within .architecture-popover.right-up,
+.flow-node:hover .architecture-popover.left-down,
+.flow-node:focus-within .architecture-popover.left-down,
+.flow-node:hover .architecture-popover.left-up,
+.flow-node:focus-within .architecture-popover.left-up {
+  transform: translateY(0);
+}
+
+.flow-node:hover .architecture-popover.bottom,
+.flow-node:focus-within .architecture-popover.bottom {
+  transform: translate(-50%, 0);
+}
+
+.workflow-terminal:hover .architecture-popover.left-up,
+.workflow-terminal:focus-within .architecture-popover.left-up {
+  transform: translateY(0);
+}
+
+.architecture-popover > strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--co-ink);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.architecture-popover dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.architecture-popover div {
+  display: grid;
+  gap: 3px;
+}
+
+.architecture-popover dt {
+  color: #bfe7ff;
+  font-size: 11px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.architecture-popover dd {
+  margin: 0;
+  color: var(--co-body);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .docs-grid pre {
