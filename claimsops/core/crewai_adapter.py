@@ -8,10 +8,12 @@ from typing import Any
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
 CREWAI_STATE_DIR = WORKSPACE_ROOT / ".crewai_state"
+_ENV_LOADED = False
 
 
 def crewai_environment_status() -> dict[str, Any]:
     """Return non-secret configuration status for the optional live CrewAI mode."""
+    _load_local_env()
     return {
         "crewai_installed": _module_available("crewai"),
         "vertex_project": os.getenv("GOOGLE_CLOUD_PROJECT", "agenticai-500006"),
@@ -89,6 +91,20 @@ def try_live_crewai_summary(claim: dict[str, Any], baseline: dict[str, Any]) -> 
 
 def _module_available(name: str) -> bool:
     return find_spec(name) is not None
+
+
+def _load_local_env() -> None:
+    """Load optional local .env settings when python-dotenv is installed."""
+    global _ENV_LOADED
+    if _ENV_LOADED:
+        return
+    _ENV_LOADED = True
+    try:
+        from dotenv import load_dotenv
+    except Exception:
+        return
+
+    load_dotenv(WORKSPACE_ROOT / ".env", override=False)
 
 
 def _prepare_crewai_environment() -> None:

@@ -14,13 +14,25 @@ The default app runs in deterministic demo mode, so it is safe for a live class 
 
 ## Optional CrewAI + Vertex AI
 
-The project includes an optional CrewAI adapter. To experiment with live LLM-backed execution, install the optional dependencies and configure Vertex AI credentials:
+The project includes an optional CrewAI adapter. To experiment with live LLM-backed execution, install the optional dependencies:
 
 ```powershell
 .venv\Scripts\python -m pip install -r requirements-crewai.txt
 ```
 
-Create a local `.env` file from `.env.example` and authenticate with Google Cloud Application Default Credentials or a service account. Do not commit credentials.
+Create a local `.env` file from `.env.example`, then set:
+
+```text
+USE_CREWAI_LIVE=true
+GOOGLE_GENAI_USE_VERTEXAI=true
+GOOGLE_CLOUD_PROJECT=agenticai-500006
+GOOGLE_CLOUD_LOCATION=us-central1
+CREWAI_MODEL=gemini/gemini-2.0-flash
+```
+
+Authenticate with Google Cloud Application Default Credentials or a service account that can call Vertex AI for project `agenticai-500006`. Do not commit credentials.
+
+After changing `.env`, restart Streamlit. The sidebar should show `Live mode: True`.
 
 ## Project Structure
 

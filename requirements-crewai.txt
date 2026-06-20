@@ -1,4 +1,4 @@
 -r requirements.txt
 crewai>=1.14.0
 google-genai>=1.20.0
-
+python-dotenv>=1.0.1
