@@ -271,6 +271,22 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   async function applyVertexConfig(event) {
     event.preventDefault();
     const nextConfig = getVertexConfigPayload();
+    if (!nextConfig.serviceAccountJson && !vertexState.hasCredentials) {
+      setVertexState((current) => ({
+        ...current,
+        projectId: nextConfig.projectId,
+        projectNumber: nextConfig.projectNumber ? "***" : current.projectNumber || "***",
+        location: nextConfig.location,
+        model: nextConfig.model,
+        liveRequested: true,
+        status: "missing_credentials",
+        enabled: false,
+        review: null,
+        message: "Project ID and Project Number are settings, not credentials. Paste a service account JSON value to run Vertex AI live."
+      }));
+      setWorkflowNote("Vertex AI still needs a service account JSON credential. Project ID and Project Number are not enough to authenticate.");
+      return;
+    }
     setVertexState((current) => ({
       ...current,
       projectId: nextConfig.projectId,
@@ -537,6 +553,7 @@ function StatusRow({ label, value, code = false }) {
 }
 
 function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
+  const hasRunCredential = Boolean(config.serviceAccountJson.trim()) || vertexState.hasCredentials;
   return (
     <form className="vertex-config-box" onSubmit={onSubmit}>
       <div className="vertex-config-title">
@@ -595,7 +612,7 @@ function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
       </div>
 
       <label htmlFor="vertex-service-account">
-        Service Account JSON
+        Service Account JSON Required For Live
         <input
           id="vertex-service-account"
           type="password"
@@ -611,6 +628,9 @@ function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
         <Sparkles aria-hidden="true" size={15} />
         Apply And Run
       </button>
+      {!hasRunCredential && (
+        <p className="vertex-config-warning">Project ID and Project Number are not credentials. Paste service account JSON to go live.</p>
+      )}
       <p>Project number and credential input stay masked. The credential is sent only for this run.</p>
     </form>
   );

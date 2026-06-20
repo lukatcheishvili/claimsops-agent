@@ -313,6 +313,14 @@ summary:focus-visible {
   line-height: 1.45;
 }
 
+.vertex-config-box .vertex-config-warning {
+  padding: 8px;
+  border: 1px solid rgba(255, 122, 61, 0.28);
+  border-radius: 6px;
+  background: rgba(255, 122, 61, 0.1);
+  color: #ffe4c8;
+}
+
 .section-label,
 .field-label {
   display: block;
