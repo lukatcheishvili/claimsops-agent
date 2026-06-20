@@ -1,0 +1,8 @@
+{
+  "Auto": ["claim_form", "customer_id", "photos", "repair_estimate"],
+  "Health": ["claim_form", "customer_id", "medical_invoice", "doctor_report"],
+  "Travel": ["claim_form", "customer_id", "travel_itinerary", "booking_receipt"],
+  "Home": ["claim_form", "customer_id", "property_photos", "ownership_proof"],
+  "Life": ["claim_form", "customer_id", "death_certificate", "beneficiary_id"]
+}
+

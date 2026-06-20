@@ -1,0 +1,75 @@
+[
+  {
+    "policy_id": "AUTO-10293",
+    "customer_name": "Elena Garcia",
+    "insurance_type": "Auto",
+    "status": "active",
+    "effective_date": "2026-01-01",
+    "expiration_date": "2026-12-31",
+    "deductible": 750,
+    "claim_limit": 60000,
+    "customer_segment": "Standard",
+    "exclusions": ["commercial delivery use", "unlicensed driver"]
+  },
+  {
+    "policy_id": "HLTH-77120",
+    "customer_name": "Omar Haddad",
+    "insurance_type": "Health",
+    "status": "active",
+    "effective_date": "2026-02-01",
+    "expiration_date": "2027-01-31",
+    "deductible": 300,
+    "claim_limit": 40000,
+    "customer_segment": "VIP",
+    "exclusions": ["cosmetic procedures", "non-authorized provider"]
+  },
+  {
+    "policy_id": "TRVL-45088",
+    "customer_name": "Maya Singh",
+    "insurance_type": "Travel",
+    "status": "active",
+    "effective_date": "2026-05-01",
+    "expiration_date": "2026-08-31",
+    "deductible": 100,
+    "claim_limit": 12000,
+    "customer_segment": "Standard",
+    "exclusions": ["known events", "unattended baggage"]
+  },
+  {
+    "policy_id": "HOME-88342",
+    "customer_name": "Lucas Martin",
+    "insurance_type": "Home",
+    "status": "active",
+    "effective_date": "2026-01-01",
+    "expiration_date": "2026-12-31",
+    "deductible": 1000,
+    "claim_limit": 150000,
+    "customer_segment": "Standard",
+    "exclusions": ["gradual wear", "unreported renovation"]
+  },
+  {
+    "policy_id": "LIFE-70018",
+    "customer_name": "Nadia Rahman",
+    "insurance_type": "Life",
+    "status": "active",
+    "effective_date": "2024-01-01",
+    "expiration_date": "2034-01-01",
+    "deductible": 0,
+    "claim_limit": 250000,
+    "customer_segment": "VIP",
+    "exclusions": ["contestability review", "excluded activity"]
+  },
+  {
+    "policy_id": "AUTO-88910",
+    "customer_name": "Jonas Muller",
+    "insurance_type": "Auto",
+    "status": "lapsed",
+    "effective_date": "2025-01-01",
+    "expiration_date": "2025-12-31",
+    "deductible": 800,
+    "claim_limit": 45000,
+    "customer_segment": "Standard",
+    "exclusions": ["commercial delivery use"]
+  }
+]
+

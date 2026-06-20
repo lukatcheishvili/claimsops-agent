@@ -1,0 +1,63 @@
+[
+  {
+    "claim_id": "CLM-2026-1042",
+    "customer_name": "Elena Garcia",
+    "policy_id": "AUTO-10293",
+    "insurance_type": "Auto",
+    "incident_date": "2026-06-16",
+    "reported_date": "2026-06-18",
+    "claim_amount": 8400,
+    "location": "Madrid, Spain",
+    "description": "Rear-end accident during commute. Vehicle has bumper and trunk damage. No injury reported.",
+    "documents": ["claim_form", "customer_id", "photos"]
+  },
+  {
+    "claim_id": "CLM-2026-1107",
+    "customer_name": "Omar Haddad",
+    "policy_id": "HLTH-77120",
+    "insurance_type": "Health",
+    "incident_date": "2026-06-10",
+    "reported_date": "2026-06-12",
+    "claim_amount": 12600,
+    "location": "Dubai, UAE",
+    "description": "Emergency hospitalization after sports injury. Customer submitted hospital invoice but no doctor report yet.",
+    "documents": ["claim_form", "customer_id", "medical_invoice"]
+  },
+  {
+    "claim_id": "CLM-2026-1199",
+    "customer_name": "Maya Singh",
+    "policy_id": "TRVL-45088",
+    "insurance_type": "Travel",
+    "incident_date": "2026-06-01",
+    "reported_date": "2026-06-19",
+    "claim_amount": 7600,
+    "location": "Lisbon, Portugal",
+    "description": "Customer reports stolen luggage and missed hotel booking. There are multiple recent travel claims on the same policy.",
+    "documents": ["claim_form", "customer_id", "travel_itinerary"]
+  },
+  {
+    "claim_id": "CLM-2026-1238",
+    "customer_name": "Lucas Martin",
+    "policy_id": "HOME-88342",
+    "insurance_type": "Home",
+    "incident_date": "2026-06-05",
+    "reported_date": "2026-06-06",
+    "claim_amount": 42000,
+    "location": "Valencia, Spain",
+    "description": "Kitchen fire caused smoke and structural damage. Customer says the damage needs urgent repair.",
+    "documents": ["claim_form", "customer_id", "property_photos", "ownership_proof"]
+  },
+  {
+    "claim_id": "CLM-2026-1290",
+    "customer_name": "Jonas Muller",
+    "policy_id": "AUTO-88910",
+    "insurance_type": "Auto",
+    "incident_date": "2026-06-03",
+    "reported_date": "2026-06-05",
+    "claim_amount": 5200,
+    "location": "Berlin, Germany",
+    "description": "Parking lot collision. Policy may not be active for the incident date.",
+    "documents": ["claim_form", "customer_id", "photos", "repair_estimate"]
+  }
+]
+

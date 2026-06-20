@@ -1,0 +1,45 @@
+[
+  {
+    "policy_id": "AUTO-10293",
+    "claim_id": "CLM-A-101",
+    "date": "2025-11-20",
+    "amount": 1800,
+    "status": "closed"
+  },
+  {
+    "policy_id": "HLTH-77120",
+    "claim_id": "CLM-H-210",
+    "date": "2026-03-18",
+    "amount": 900,
+    "status": "paid"
+  },
+  {
+    "policy_id": "TRVL-45088",
+    "claim_id": "CLM-T-019",
+    "date": "2026-05-08",
+    "amount": 450,
+    "status": "closed"
+  },
+  {
+    "policy_id": "TRVL-45088",
+    "claim_id": "CLM-T-022",
+    "date": "2026-05-19",
+    "amount": 1250,
+    "status": "closed"
+  },
+  {
+    "policy_id": "TRVL-45088",
+    "claim_id": "CLM-T-027",
+    "date": "2026-06-02",
+    "amount": 700,
+    "status": "open"
+  },
+  {
+    "policy_id": "HOME-88342",
+    "claim_id": "CLM-P-077",
+    "date": "2025-09-13",
+    "amount": 6200,
+    "status": "closed"
+  }
+]
+
