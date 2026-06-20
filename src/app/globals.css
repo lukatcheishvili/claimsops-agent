@@ -65,16 +65,34 @@ summary:focus-visible {
   display: grid;
   grid-template-columns: 348px minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 180ms ease;
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
 }
 
 .sidebar {
   position: sticky;
   top: 0;
+  min-width: 0;
   height: 100vh;
+  max-height: 100vh;
   overflow-y: auto;
   padding: 24px 20px;
   background: var(--co-deep);
   border-right: 1px solid var(--co-hairline);
+  transition: opacity 160ms ease, padding 180ms ease, border-color 180ms ease;
+}
+
+.app-shell.sidebar-collapsed .sidebar {
+  max-height: 0;
+  overflow: hidden;
+  padding-right: 0;
+  padding-left: 0;
+  border-right-color: transparent;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .sidebar-header {
@@ -203,6 +221,48 @@ code {
   width: 100%;
   max-width: none;
   padding: 30px clamp(24px, 2.2vw, 44px) 56px;
+}
+
+.canvas-controls {
+  position: sticky;
+  top: 10px;
+  z-index: 30;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin: -14px 0 10px;
+  padding: 5px;
+  border: 1px solid var(--co-hairline);
+  border-radius: 8px;
+  background: rgba(9, 9, 9, 0.86);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.icon-button {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--co-body);
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.icon-button:hover {
+  border-color: var(--co-hairline-strong);
+  background: var(--co-surface-2);
+  color: var(--co-ink);
+  transform: translateY(-1px);
+}
+
+.icon-button[aria-pressed="true"] {
+  border-color: rgba(0, 153, 255, 0.35);
+  background: rgba(0, 153, 255, 0.14);
+  color: #bfe7ff;
 }
 
 .hero {
@@ -1467,6 +1527,10 @@ td {
     grid-template-columns: 320px minmax(0, 1fr);
   }
 
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+
   .hero,
   .dashboard-grid,
   .form-grid,
@@ -1499,11 +1563,21 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .sidebar {
     position: relative;
     height: auto;
+    max-height: none;
     border-right: 0;
     border-bottom: 1px solid var(--co-hairline);
+  }
+
+  .app-shell.sidebar-collapsed .sidebar {
+    max-height: 0;
+    border-bottom-color: transparent;
   }
 
   .metrics,

@@ -10,7 +10,11 @@ import {
   FileText,
   GitBranch,
   LayoutDashboard,
+  Maximize2,
   MessageSquare,
+  Minimize2,
+  PanelLeftClose,
+  PanelLeftOpen,
   Play,
   RefreshCw,
   Route,
@@ -97,6 +101,8 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [approvalState, setApprovalState] = useState("Pending Adjuster Review");
   const [workflowNote, setWorkflowNote] = useState("Default mode: deterministic demo workflow.");
   const [vertexState, setVertexState] = useState(initialVertexState);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const analysis = useMemo(() => analyzeClaim(submittedClaim), [submittedClaim]);
   const selectedSample = sampleClaims[selectedIndex];
 
@@ -130,6 +136,16 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    function syncFullscreenState() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+
+    syncFullscreenState();
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
   }, []);
 
   function loadSelectedClaim() {
@@ -202,8 +218,20 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     }
   }
 
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen?.();
+      } else {
+        await document.documentElement.requestFullscreen?.();
+      }
+    } catch {
+      setWorkflowNote("Fullscreen mode is not available in this browser context.");
+    }
+  }
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
       <aside className="sidebar" aria-label="ClaimsOps controls">
         <div className="sidebar-header">
           <span className="brand-mark">CO</span>
@@ -261,6 +289,28 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
       </aside>
 
       <main className="main" id="main-content">
+        <div className="canvas-controls" aria-label="Canvas controls">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={sidebarOpen ? "Hide controls panel" : "Show controls panel"}
+            title={sidebarOpen ? "Hide controls panel" : "Show controls panel"}
+            aria-pressed={!sidebarOpen}
+            onClick={() => setSidebarOpen((current) => !current)}
+          >
+            {sidebarOpen ? <PanelLeftClose aria-hidden="true" size={17} /> : <PanelLeftOpen aria-hidden="true" size={17} />}
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            aria-pressed={isFullscreen}
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? <Minimize2 aria-hidden="true" size={17} /> : <Maximize2 aria-hidden="true" size={17} />}
+          </button>
+        </div>
         <Hero analysis={analysis} setActiveTab={setActiveTab} vertexState={vertexState} />
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
