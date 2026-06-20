@@ -386,7 +386,7 @@ function draftCommunications(claim, policy, evidence, risk, recommendation) {
   const firstName = claim.customer_name.split(" ")[0];
   const policyLabel = policy ? policy.policy_id : claim.policy_id;
   const missingSentence = evidence.missing.length
-    ? ` We still need: ${evidence.missing.join(", ")}.`
+    ? ` We still need: ${evidence.missing.map(formatReadableLabel).join(", ")}.`
     : " We have the core documents required for initial review.";
 
   return {
@@ -423,7 +423,7 @@ function buildTrace(claim, policy, coverage, evidence, risk, recommendation) {
       agent: "Evidence Review Agent",
       decision: "Compare submitted evidence against the line-specific checklist.",
       observation: evidence.missing.length
-        ? `Missing: ${evidence.missing.join(", ")}`
+        ? `Missing: ${evidence.missing.map(formatReadableLabel).join(", ")}`
         : "All required documents are present.",
       tool_used: "document_requirements_tool"
     },
@@ -459,4 +459,16 @@ function daysBetween(start, end) {
 
 function titleCase(value) {
   return value ? value[0].toUpperCase() + value.slice(1).toLowerCase() : value;
+}
+
+function formatReadableLabel(value) {
+  const special = {
+    customer_id: "Customer ID",
+    beneficiary_id: "Beneficiary ID"
+  };
+  if (special[value]) return special[value];
+  return String(value || "")
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }

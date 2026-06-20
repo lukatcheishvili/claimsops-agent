@@ -1080,6 +1080,22 @@ textarea {
   line-height: 1.45;
 }
 
+.tool-chip {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  margin-top: 4px;
+  padding: 5px 9px;
+  border: 1px solid rgba(0, 153, 255, 0.24);
+  border-radius: 5px;
+  background: rgba(0, 153, 255, 0.1);
+  color: #bfe7ff;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.2;
+}
+
 .approval-console {
   display: flex;
   align-items: center;

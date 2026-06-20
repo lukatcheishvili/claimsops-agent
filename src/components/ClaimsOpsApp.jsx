@@ -710,7 +710,7 @@ function AgentReview({ analysis, approvalState, vertexState }) {
                 <strong>{step.agent}</strong>
                 <p>{step.decision}</p>
                 <small>{step.observation}</small>
-                <code>{step.tool_used}</code>
+                <span className="tool-chip">{formatToolLabel(step.tool_used)}</span>
               </div>
             </article>
           ))}
@@ -1214,6 +1214,20 @@ function formatDocLabel(value) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatToolLabel(value) {
+  const labels = {
+    claim_intake_parser: "Claim Intake Parser",
+    policy_lookup_tool: "Policy Lookup Tool",
+    document_requirements_tool: "Document Requirements Tool",
+    risk_scoring_tool: "Risk Scoring Tool",
+    next_action_tool: "Next Action Tool",
+    communication_draft_tool: "Communication Draft Tool",
+    vertex_live_review_tool: "Vertex Live Review Tool"
+  };
+  if (labels[value]) return labels[value];
+  return formatDocLabel(value);
 }
 
 function numberFormat(value) {
