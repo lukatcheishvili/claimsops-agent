@@ -18,6 +18,7 @@ The repo contains two working interfaces:
 - **Human Approval Action Log**: approval, evidence request, and escalation actions are recorded.
 - **Manager View**: shows highest-value operational signals: manual queue, evidence blockers, high-risk claims, urgent SLAs, owner load, and recommended management actions.
 - **Vertex Runtime Status**: makes live-mode readiness visible without hiding deterministic fallback behavior.
+- **Sidebar Vertex Config**: lets presenters enter a Project ID and masked Project Number for the active run.
 - **Architecture Popovers**: every architecture node explains why it exists, its role, and its output.
 
 ## Highest-Value Additions
@@ -117,6 +118,8 @@ VERTEX_AI_LIVE=false
 ```
 
 The service account must be allowed to call Vertex AI in project `agenticai-500006`. Do not commit the JSON key. After updating Vercel variables, redeploy the project. In the app, load or submit a claim and open **Agent Review**; the **Vertex AI Live Review** and **Vertex Runtime Status** panels will show either the live review or the exact fallback reason.
+
+The sidebar also has a **Vertex AI Config** box. Use it to enter the Project ID and Project Number for a specific demo run. The Project Number field is masked in the UI and in API status responses. This does not replace the service account secret; live output still requires server-side credentials in Vercel or local `.env.local`.
 
 ## Run The Streamlit App
 

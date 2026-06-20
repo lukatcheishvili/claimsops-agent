@@ -21,8 +21,8 @@ export function getVertexRuntimeStatus() {
   };
 }
 
-export async function runVertexClaimsReview(analysis) {
-  const config = getVertexConfig();
+export async function runVertexClaimsReview(analysis, overrides = {}) {
+  const config = getVertexConfig(overrides);
   const credentials = getServiceAccountCredentials();
 
   if (!config.liveRequested) {
@@ -62,15 +62,18 @@ export async function runVertexClaimsReview(analysis) {
   }
 }
 
-function getVertexConfig() {
+function getVertexConfig(overrides = {}) {
   const env = process.env;
-  const model = normalizeModelName(env.VERTEX_AI_MODEL || env.CREWAI_MODEL || DEFAULT_MODEL);
-  const liveRequested = getLiveRequested(env);
+  const model = normalizeModelName(sanitizeModelName(overrides.model) || env.VERTEX_AI_MODEL || env.CREWAI_MODEL || DEFAULT_MODEL);
+  const liveRequested = overrides.liveRequested === true ? true : getLiveRequested(env);
+  const projectId = sanitizeProjectId(overrides.projectId) || env.VERTEX_AI_PROJECT || env.GOOGLE_CLOUD_PROJECT || DEFAULT_PROJECT_ID;
+  const projectNumber = sanitizeProjectNumber(overrides.projectNumber) || env.GOOGLE_CLOUD_PROJECT_NUMBER || DEFAULT_PROJECT_NUMBER;
+  const location = sanitizeLocation(overrides.location) || env.VERTEX_AI_LOCATION || env.GOOGLE_CLOUD_LOCATION || DEFAULT_LOCATION;
 
   return {
-    projectId: env.VERTEX_AI_PROJECT || env.GOOGLE_CLOUD_PROJECT || DEFAULT_PROJECT_ID,
-    projectNumber: env.GOOGLE_CLOUD_PROJECT_NUMBER || DEFAULT_PROJECT_NUMBER,
-    location: env.VERTEX_AI_LOCATION || env.GOOGLE_CLOUD_LOCATION || DEFAULT_LOCATION,
+    projectId,
+    projectNumber,
+    location,
     model,
     liveRequested
   };
@@ -92,6 +95,26 @@ function buildStatus(status, config, message, credentials = getServiceAccountCre
 
 function maskProjectNumber(value) {
   return value ? "***" : "***";
+}
+
+function sanitizeProjectId(value) {
+  const text = String(value || "").trim();
+  return /^[a-z][a-z0-9-]{4,62}$/.test(text) ? text : "";
+}
+
+function sanitizeProjectNumber(value) {
+  const text = String(value || "").replace(/\D/g, "");
+  return text.length >= 6 && text.length <= 20 ? text : "";
+}
+
+function sanitizeLocation(value) {
+  const text = String(value || "").trim();
+  return /^[a-z]+-[a-z0-9-]+[0-9]$/.test(text) ? text : "";
+}
+
+function sanitizeModelName(value) {
+  const text = String(value || "").trim();
+  return /^[a-zA-Z0-9._/-]+$/.test(text) ? text : "";
 }
 
 function getLiveRequested(env) {

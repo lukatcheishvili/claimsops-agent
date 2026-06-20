@@ -19,7 +19,7 @@ export async function POST(request) {
     }
 
     const analysis = analyzeClaim(body.claim);
-    const vertex = await runVertexClaimsReview(analysis);
+    const vertex = await runVertexClaimsReview(analysis, body.vertexConfig);
 
     return NextResponse.json({
       mode: vertex.enabled ? "vertex" : "deterministic",

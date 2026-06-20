@@ -132,6 +132,13 @@ const initialVertexState = {
   review: null
 };
 
+const initialVertexConfig = {
+  projectId: "agenticai-500006",
+  projectNumber: "",
+  location: "us-central1",
+  model: "gemini-2.0-flash"
+};
+
 export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [activeTab, setActiveTab] = useState("submit");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -140,6 +147,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [approvalState, setApprovalState] = useState("Pending Adjuster Review");
   const [workflowNote, setWorkflowNote] = useState("Vertex AI live mode is requested; deterministic guardrails stay available.");
   const [vertexState, setVertexState] = useState(initialVertexState);
+  const [vertexConfig, setVertexConfig] = useState(initialVertexConfig);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [demoActive, setDemoActive] = useState(false);
@@ -168,6 +176,12 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           enabled: false,
           status: vertex.liveRequested && vertex.hasCredentials ? "ready" : vertex.liveRequested ? "missing_credentials" : "disabled",
           message: getVertexConfigMessage(vertex)
+        }));
+        setVertexConfig((current) => ({
+          ...current,
+          projectId: vertex.projectId || current.projectId,
+          location: vertex.location || current.location,
+          model: vertex.model || current.model
         }));
       } catch (error) {
         if (!active) return;
@@ -238,6 +252,36 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     await runVertexWorkflow(draft);
   }
 
+  function updateVertexConfig(field, value) {
+    setVertexConfig((current) => ({ ...current, [field]: value }));
+  }
+
+  function getVertexConfigPayload(config = vertexConfig) {
+    return {
+      projectId: config.projectId.trim() || "agenticai-500006",
+      projectNumber: config.projectNumber.trim(),
+      location: config.location.trim() || "us-central1",
+      model: config.model.trim() || "gemini-2.0-flash",
+      liveRequested: true
+    };
+  }
+
+  async function applyVertexConfig(event) {
+    event.preventDefault();
+    const nextConfig = getVertexConfigPayload();
+    setVertexState((current) => ({
+      ...current,
+      projectId: nextConfig.projectId,
+      projectNumber: nextConfig.projectNumber ? "***" : current.projectNumber || "***",
+      location: nextConfig.location,
+      model: nextConfig.model,
+      liveRequested: true,
+      message: "Vertex AI project settings applied. Running the active claim review..."
+    }));
+    setWorkflowNote("Vertex AI project settings applied; running active claim review.");
+    await runVertexWorkflow(submittedClaim, nextConfig);
+  }
+
   function handleApprovalAction(nextState, detail) {
     setApprovalState(nextState);
     setApprovalLog((current) => [
@@ -275,7 +319,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     setWorkflowNote("Guided demo mode ended.");
   }
 
-  async function runVertexWorkflow(claim) {
+  async function runVertexWorkflow(claim, configOverride = getVertexConfigPayload()) {
     setVertexState((current) => ({
       ...current,
       status: "running",
@@ -287,7 +331,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
       const response = await fetch("/api/claimsops/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ claim })
+        body: JSON.stringify({ claim, vertexConfig: configOverride })
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "ClaimsOps API route failed.");
@@ -384,6 +428,13 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           <StatusRow label="Model" value={vertexState.model || "gemini-2.0-flash"} code />
           <p className="muted">{workflowNote}</p>
         </div>
+
+        <VertexConfigBox
+          config={vertexConfig}
+          vertexState={vertexState}
+          onChange={updateVertexConfig}
+          onSubmit={applyVertexConfig}
+        />
       </aside>
 
       <main className="main" id="main-content">
@@ -479,6 +530,75 @@ function StatusRow({ label, value, code = false }) {
       <span>{label}</span>
       {code ? <code translate="no">{value}</code> : <strong>{value}</strong>}
     </div>
+  );
+}
+
+function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
+  return (
+    <form className="vertex-config-box" onSubmit={onSubmit}>
+      <div className="vertex-config-title">
+        <span>
+          <Sparkles aria-hidden="true" size={15} />
+        </span>
+        <div>
+          <strong>Vertex AI Config</strong>
+          <small>{getVertexStatusLabel(vertexState.status)}</small>
+        </div>
+      </div>
+
+      <label htmlFor="vertex-project-id">
+        Project ID
+        <input
+          id="vertex-project-id"
+          value={config.projectId}
+          onChange={(event) => onChange("projectId", event.target.value)}
+          placeholder="agenticai-500006"
+          spellCheck="false"
+        />
+      </label>
+
+      <label htmlFor="vertex-project-number">
+        Project Number
+        <input
+          id="vertex-project-number"
+          type="password"
+          inputMode="numeric"
+          value={config.projectNumber}
+          onChange={(event) => onChange("projectNumber", event.target.value)}
+          placeholder="***"
+          autoComplete="off"
+        />
+      </label>
+
+      <div className="vertex-config-grid">
+        <label htmlFor="vertex-location">
+          Location
+          <input
+            id="vertex-location"
+            value={config.location}
+            onChange={(event) => onChange("location", event.target.value)}
+            placeholder="us-central1"
+            spellCheck="false"
+          />
+        </label>
+        <label htmlFor="vertex-model">
+          Model
+          <input
+            id="vertex-model"
+            value={config.model}
+            onChange={(event) => onChange("model", event.target.value)}
+            placeholder="gemini-2.0-flash"
+            spellCheck="false"
+          />
+        </label>
+      </div>
+
+      <button type="submit" className="button secondary wide">
+        <Sparkles aria-hidden="true" size={15} />
+        Apply And Run
+      </button>
+      <p>Project number stays masked in the UI. Live output still requires server-side Vertex credentials.</p>
+    </form>
   );
 }
 

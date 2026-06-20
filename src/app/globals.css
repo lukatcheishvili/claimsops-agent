@@ -176,6 +176,90 @@ summary:focus-visible {
   border-top: 1px solid var(--co-hairline);
 }
 
+.vertex-config-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid rgba(0, 153, 255, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(0, 153, 255, 0.12), transparent 52%),
+    var(--co-surface-1);
+}
+
+.vertex-config-title {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.vertex-config-title > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--co-hairline);
+  border-radius: 7px;
+  background: var(--co-canvas);
+  color: var(--co-blue);
+}
+
+.vertex-config-title strong,
+.vertex-config-title small {
+  display: block;
+  min-width: 0;
+}
+
+.vertex-config-title strong {
+  color: var(--co-ink);
+  line-height: 1.2;
+}
+
+.vertex-config-title small {
+  margin-top: 2px;
+  color: var(--co-blue);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.vertex-config-box label {
+  display: grid;
+  gap: 5px;
+  color: var(--co-body);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.vertex-config-box input {
+  min-height: 38px;
+  margin: 0;
+  padding: 9px 10px;
+  border-color: var(--co-hairline-soft);
+  background: var(--co-canvas);
+  font-size: 12px;
+}
+
+.vertex-config-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.vertex-config-box .button {
+  min-height: 40px;
+  padding: 9px 11px;
+  font-size: 13px;
+}
+
+.vertex-config-box p {
+  margin: 0;
+  color: var(--co-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .section-label,
 .field-label {
   display: block;
