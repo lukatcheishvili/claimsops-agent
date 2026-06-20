@@ -4,7 +4,7 @@ Read `PRODUCT.md` and `DESIGN.md` before changing this project.
 
 ## Project Contract
 
-ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preserve deterministic demo mode as the default. CrewAI and Vertex AI are optional live paths and must fail gracefully without breaking the demo.
+ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preserve deterministic demo mode as the default. CrewAI and Vertex AI are optional live paths and must fail gracefully without breaking the demo. The repo now has two user surfaces: the original Streamlit app in `claimsops/app.py` and the Vercel-ready Next.js replica in `app/`, `components/`, and `lib/`.
 
 ## Agent Skill Best Practices
 
@@ -21,6 +21,7 @@ ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preser
 - Follow the system in `DESIGN.md`: Framer-style dark surfaces, white primary actions, blue focus/live state, energetic accent colors, small radii, flat panels, and no nested card feel.
 - Check rest, hover, active, focus, and selected states. Text must never disappear until hover.
 - Treat Streamlit selectors, buttons, tabs, alerts, expanders, charts, and Graphviz as one product surface.
+- Keep the Next.js/Vercel replica behaviorally aligned with the Streamlit app when changing demo data, claims scoring, agent trace, tabs, or presentation copy.
 
 ## Safety
 
@@ -35,6 +36,7 @@ Run these from the project root:
 ```powershell
 .venv\Scripts\python -m py_compile claimsops\app.py claimsops\core\engine.py claimsops\core\crewai_adapter.py
 rg -n "transition:\s*all|outline:\s*none|outline-none|user-scalable|maximum-scale|onPaste" claimsops .streamlit README.md docs PRODUCT.md DESIGN.md -S
+pnpm build
 ```
 
 If UI code changed, start Streamlit and verify `http://localhost:8502` returns HTTP 200. When possible, visually inspect the sidebar, tabs, form controls, dashboard, architecture diagram, and prompt pack.

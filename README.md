@@ -4,6 +4,8 @@ Agentic AI MVP for insurance claims operations. The app demonstrates how a multi
 
 ## Quick Start
 
+### Streamlit MVP
+
 ```powershell
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
@@ -11,6 +13,21 @@ python -m venv .venv
 ```
 
 The default app runs in deterministic demo mode, so it is safe for a live class presentation without cloud credentials.
+
+### Vercel / Next.js Replica
+
+The repository also includes a Vercel-ready Next.js version of the same clickable MVP. It reuses the existing demo JSON data and ports the deterministic claims engine to JavaScript.
+
+```powershell
+pnpm install
+pnpm dev
+```
+
+For Vercel, import the GitHub repo and keep the project root as the app root. Vercel will detect `package.json` and build the Next.js app with:
+
+```powershell
+pnpm build
+```
 
 ## Optional CrewAI + Vertex AI
 
@@ -39,8 +56,14 @@ After changing `.env`, restart Streamlit. The sidebar should show `Live mode: Tr
 ```text
 .env.example
 AGENTS.md
+app/
+components/
 DESIGN.md
+lib/
+next.config.mjs
+package.json
 PRODUCT.md
+vercel.json
 claimsops/
   app.py
   core/
