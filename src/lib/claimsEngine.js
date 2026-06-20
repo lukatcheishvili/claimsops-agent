@@ -1,7 +1,7 @@
-import claimHistoryData from "../claimsops/demo_data/claim_history.json";
-import documentRequirementsData from "../claimsops/demo_data/document_requirements.json";
-import policiesData from "../claimsops/demo_data/policies.json";
-import sampleClaimsData from "../claimsops/demo_data/sample_claims.json";
+import claimHistoryData from "../../claimsops/demo_data/claim_history.json";
+import documentRequirementsData from "../../claimsops/demo_data/document_requirements.json";
+import policiesData from "../../claimsops/demo_data/policies.json";
+import sampleClaimsData from "../../claimsops/demo_data/sample_claims.json";
 
 export const sampleClaims = sampleClaimsData;
 export const policies = policiesData;
