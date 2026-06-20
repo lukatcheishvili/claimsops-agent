@@ -96,6 +96,8 @@ The Vercel app uses the deterministic JavaScript claims engine in `src/lib/claim
 
 ## Enable Vertex AI On Vercel
 
+The app now requests Vertex AI live mode by default for project `agenticai-500006`. It will show **Ready** or **Live** only when the runtime also has valid service account credentials. It will show **Needs Credentials** if the project settings are present but the private key is missing.
+
 Add these environment variables in **Vercel Project Settings -> Environment Variables**:
 
 ```text
@@ -106,6 +108,12 @@ GOOGLE_CLOUD_LOCATION=us-central1
 VERTEX_AI_LIVE=true
 VERTEX_AI_MODEL=gemini-2.0-flash
 GOOGLE_SERVICE_ACCOUNT_JSON={...service account JSON...}
+```
+
+To explicitly disable live mode for a fallback-only demo, set:
+
+```text
+VERTEX_AI_LIVE=false
 ```
 
 The service account must be allowed to call Vertex AI in project `agenticai-500006`. Do not commit the JSON key. After updating Vercel variables, redeploy the project. In the app, load or submit a claim and open **Agent Review**; the **Vertex AI Live Review** and **Vertex Runtime Status** panels will show either the live review or the exact fallback reason.

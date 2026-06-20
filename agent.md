@@ -59,6 +59,8 @@ Guardrail:
 
 2026-06-20 pass:
 
+- Changed the Vercel Vertex AI runtime to request live mode by default for project `agenticai-500006`. The UI should no longer show **Disabled** unless `VERTEX_AI_LIVE=false` is explicitly set. If credentials are not present, it will show **Needs Credentials**.
+- Added local `.env.local` with non-secret Vertex project settings. It is ignored by Git and still requires a real `GOOGLE_SERVICE_ACCOUNT_JSON` value for live calls.
 - Added **Agent Chat** as a dedicated tab.
 - Added deterministic chat answers for evidence, risk, coverage, routing, architecture, Vertex status, approval gate, and audit history.
 - Added **Guided Demo Mode** with six presentation steps.
@@ -168,6 +170,8 @@ VERTEX_AI_LIVE=true
 VERTEX_AI_MODEL=gemini-2.0-flash
 GOOGLE_SERVICE_ACCOUNT_JSON={...service account JSON...}
 ```
+
+The app requests live mode by default. Use `VERTEX_AI_LIVE=false` only when a deterministic-only deployment is desired.
 
 Do not commit service account JSON or local `.env` files.
 

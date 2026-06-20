@@ -122,7 +122,7 @@ const initialVertexState = {
   status: "checking",
   mode: "deterministic",
   enabled: false,
-  liveRequested: false,
+  liveRequested: true,
   hasCredentials: false,
   projectId: "agenticai-500006",
   projectNumber: "808855388233",
@@ -138,7 +138,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [submittedClaim, setSubmittedClaim] = useState(sampleClaims[0]);
   const [draft, setDraft] = useState(sampleClaims[0]);
   const [approvalState, setApprovalState] = useState("Pending Adjuster Review");
-  const [workflowNote, setWorkflowNote] = useState("Default mode: deterministic demo workflow.");
+  const [workflowNote, setWorkflowNote] = useState("Vertex AI live mode is requested; deterministic guardrails stay available.");
   const [vertexState, setVertexState] = useState(initialVertexState);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -2036,7 +2036,7 @@ function getVertexConfigMessage(vertex) {
     return "Vertex AI live mode is configured. Load or submit a claim to generate a live review.";
   }
   if (vertex.liveRequested) {
-    return "Vertex AI live mode is requested, but service account credentials are missing.";
+    return "Vertex AI live mode is enabled for this project, but service account credentials are missing from the runtime.";
   }
-  return "Vertex AI API route is available. Set VERTEX_AI_LIVE=true and add service account credentials to enable it.";
+  return "Vertex AI live mode is explicitly disabled. Remove VERTEX_AI_LIVE=false or set it to true to re-enable it.";
 }

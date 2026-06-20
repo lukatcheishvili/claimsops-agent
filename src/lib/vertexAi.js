@@ -5,6 +5,7 @@ const DEFAULT_PROJECT_ID = "agenticai-500006";
 const DEFAULT_PROJECT_NUMBER = "808855388233";
 const DEFAULT_LOCATION = "us-central1";
 const DEFAULT_MODEL = "gemini-2.0-flash";
+const DEFAULT_LIVE_REQUESTED = true;
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
 
@@ -25,11 +26,11 @@ export async function runVertexClaimsReview(analysis) {
   const credentials = getServiceAccountCredentials();
 
   if (!config.liveRequested) {
-    return buildStatus("disabled", config, "Vertex AI live mode is disabled. Set VERTEX_AI_LIVE=true in the deployment environment.");
+    return buildStatus("disabled", config, "Vertex AI live mode is explicitly disabled. Set VERTEX_AI_LIVE=true or remove VERTEX_AI_LIVE=false in the deployment environment.", credentials);
   }
 
   if (!credentials) {
-    return buildStatus("missing_credentials", config, "Vertex AI project settings are present, but service account credentials are not configured.");
+    return buildStatus("missing_credentials", config, "Vertex AI live mode is enabled for this project, but service account credentials are not configured.");
   }
 
   try {
@@ -51,7 +52,7 @@ export async function runVertexClaimsReview(analysis) {
     const payload = await response.json();
     const text = extractCandidateText(payload);
     return {
-      ...buildStatus("live", config, "Vertex AI produced a live claims review."),
+      ...buildStatus("live", config, "Vertex AI produced a live claims review.", credentials),
       review: parseVertexReview(text),
       rawText: text,
       generatedAt: new Date().toISOString()
@@ -64,7 +65,7 @@ export async function runVertexClaimsReview(analysis) {
 function getVertexConfig() {
   const env = process.env;
   const model = normalizeModelName(env.VERTEX_AI_MODEL || env.CREWAI_MODEL || DEFAULT_MODEL);
-  const liveRequested = isTruthy(env.VERTEX_AI_LIVE) || isTruthy(env.USE_VERTEX_AI_LIVE) || isTruthy(env.GOOGLE_GENAI_USE_VERTEXAI);
+  const liveRequested = getLiveRequested(env);
 
   return {
     projectId: env.VERTEX_AI_PROJECT || env.GOOGLE_CLOUD_PROJECT || DEFAULT_PROJECT_ID,
@@ -75,16 +76,25 @@ function getVertexConfig() {
   };
 }
 
-function buildStatus(status, config, message) {
+function buildStatus(status, config, message, credentials = getServiceAccountCredentials()) {
   return {
     enabled: status === "live",
     status,
     message,
+    liveRequested: config.liveRequested,
+    hasCredentials: Boolean(credentials),
     projectId: config.projectId,
     projectNumber: config.projectNumber,
     location: config.location,
     model: config.model
   };
+}
+
+function getLiveRequested(env) {
+  const flags = [env.VERTEX_AI_LIVE, env.USE_VERTEX_AI_LIVE, env.GOOGLE_GENAI_USE_VERTEXAI];
+  const hasExplicitFlag = flags.some((value) => value !== undefined && String(value).trim() !== "");
+  if (!hasExplicitFlag) return DEFAULT_LIVE_REQUESTED;
+  return flags.some(isTruthy);
 }
 
 function getServiceAccountCredentials() {
