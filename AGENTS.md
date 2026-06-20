@@ -21,7 +21,7 @@ ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preser
 - Follow the system in `DESIGN.md`: Framer-style dark surfaces, white primary actions, blue focus/live state, energetic accent colors, small radii, flat panels, and no nested card feel.
 - Check rest, hover, active, focus, and selected states. Text must never disappear until hover.
 - Treat Streamlit selectors, buttons, tabs, alerts, expanders, charts, and Graphviz as one product surface.
-- Keep the Next.js/Vercel replica behaviorally aligned with the Streamlit app when changing demo data, claims scoring, agent trace, tabs, or presentation copy.
+- Keep the Next.js/Vercel replica behaviorally aligned with the Streamlit app when changing demo data, claims scoring, agent trace, tabs, or presentation copy. The Vercel dashboard uses Recharts, so preserve chart responsiveness and dark-theme tooltip readability when changing visualizations.
 
 ## Safety
 

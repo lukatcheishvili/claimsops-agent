@@ -16,7 +16,7 @@ The default app runs in deterministic demo mode, so it is safe for a live class 
 
 ### Vercel / Next.js Replica
 
-The repository also includes a Vercel-ready Next.js version of the same clickable MVP. It reuses the existing demo JSON data and ports the deterministic claims engine to JavaScript.
+The repository also includes a Vercel-ready Next.js version of the same clickable MVP. It reuses the existing demo JSON data and ports the deterministic claims engine to JavaScript. The Vercel UI includes a full-width operations canvas, a Figma-style agent workflow board, detailed non-technical agent reasoning, and Recharts-powered dashboard visualizations.
 
 ```powershell
 pnpm install
