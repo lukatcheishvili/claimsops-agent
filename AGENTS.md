@@ -18,7 +18,7 @@ ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preser
 ## Design Workflow
 
 - Reuse the CSS tokens in `claimsops/app.py` before introducing a new visual value.
-- Follow the system in `DESIGN.md`: warm dark surfaces, gold primary actions, patina focus/state, small radii, flat panels, and no nested card feel.
+- Follow the system in `DESIGN.md`: Framer-style dark surfaces, white primary actions, blue focus/live state, energetic accent colors, small radii, flat panels, and no nested card feel.
 - Check rest, hover, active, focus, and selected states. Text must never disappear until hover.
 - Treat Streamlit selectors, buttons, tabs, alerts, expanders, charts, and Graphviz as one product surface.
 
@@ -35,7 +35,6 @@ Run these from the project root:
 ```powershell
 .venv\Scripts\python -m py_compile claimsops\app.py claimsops\core\engine.py claimsops\core\crewai_adapter.py
 rg -n "transition:\s*all|outline:\s*none|outline-none|user-scalable|maximum-scale|onPaste" claimsops .streamlit README.md docs PRODUCT.md DESIGN.md -S
-rg -n "#(0099ff|d44df0|6a4cf5|ff7a3d|FFFFFF|000000|090909|141414|1c1c1c)" claimsops .streamlit README.md docs PRODUCT.md DESIGN.md -S
 ```
 
 If UI code changed, start Streamlit and verify `http://localhost:8502` returns HTTP 200. When possible, visually inspect the sidebar, tabs, form controls, dashboard, architecture diagram, and prompt pack.

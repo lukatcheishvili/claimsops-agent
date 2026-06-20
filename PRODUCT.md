@@ -21,7 +21,7 @@ Precise, operational, and trustworthy. The app should feel like a control surfac
 
 ## Anti-References
 
-- Generic AI dashboards with purple gradients, neon glows, glass panels, or vague "boost productivity" copy.
+- Generic AI dashboards with vague "boost productivity" copy, glass panels, or decorative effects that compete with the working demo.
 - Marketing landing pages that delay the actual working demo.
 - Low-contrast dark UI where button text, selected claims, or dropdown states disappear.
 - Automation language that implies the agent can approve, deny, settle, or pay claims without human review.

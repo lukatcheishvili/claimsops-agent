@@ -27,24 +27,29 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --co-canvas: #11100c;
-            --co-deep: #080704;
-            --co-surface-1: #191812;
-            --co-surface-2: #242219;
-            --co-graphite: #302d22;
-            --co-hairline: rgba(222, 198, 135, 0.18);
-            --co-hairline-soft: rgba(222, 198, 135, 0.12);
-            --co-hairline-strong: rgba(227, 182, 75, 0.56);
-            --co-ink: #ede8dc;
-            --co-body: #d8d1c2;
-            --co-muted: #aaa18f;
-            --co-faint: #817867;
-            --co-gold: #e3b64b;
-            --co-gold-soft: #f0cf79;
-            --co-patina: #5fc3bc;
-            --co-patina-deep: #1d5751;
-            --co-warning: #c76a45;
-            --co-success: #6dcc8b;
+            --co-canvas: #090909;
+            --co-deep: #050505;
+            --co-surface-1: #141414;
+            --co-surface-2: #1c1c1c;
+            --co-graphite: #242424;
+            --co-hairline: #262626;
+            --co-hairline-soft: #1a1a1a;
+            --co-hairline-strong: rgba(255,255,255,0.12);
+            --co-ink: #ffffff;
+            --co-body: rgba(255,255,255,0.78);
+            --co-muted: #999999;
+            --co-faint: #6b6b6b;
+            --co-blue: #0099ff;
+            --co-magenta: #d44df0;
+            --co-violet: #6a4cf5;
+            --co-orange: #ff7a3d;
+            --co-coral: #ff5577;
+            --co-gold: #ffffff;
+            --co-gold-soft: #f4f4f4;
+            --co-patina: #0099ff;
+            --co-patina-deep: #063758;
+            --co-warning: #ff7a3d;
+            --co-success: #22c55e;
         }
 
         :root,
@@ -55,11 +60,11 @@ def inject_css() -> None:
         html, body, [data-testid="stAppViewContainer"], .stApp {
             background: var(--co-canvas);
             color: var(--co-ink);
-            font-family: "Aptos", "Avenir Next", "Albert Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             font-feature-settings: "cv01", "cv05", "cv09", "cv11", "ss03", "ss07", "tnum";
             letter-spacing: 0;
             overflow-x: hidden;
-            -webkit-tap-highlight-color: rgba(95,195,188,0.2);
+            -webkit-tap-highlight-color: rgba(0,153,255,0.18);
         }
 
         .block-container {
@@ -115,7 +120,7 @@ def inject_css() -> None:
             border: 1px solid var(--co-hairline);
             border-radius: 8px;
             padding: 1rem;
-            box-shadow: inset 0 1px 0 rgba(237,232,220,0.05);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
         }
 
         [data-testid="stMetric"] label,
@@ -154,9 +159,9 @@ def inject_css() -> None:
         }
 
         [data-testid="stSidebar"] .stButton > button {
-            background: transparent;
-            color: var(--co-gold);
-            border: 1px solid var(--co-hairline-strong);
+            background: var(--co-surface-2);
+            color: var(--co-ink);
+            border: 1px solid var(--co-hairline);
         }
 
         .stButton > button:hover,
@@ -167,13 +172,13 @@ def inject_css() -> None:
             background: var(--co-gold-soft);
             border: 1px solid var(--co-hairline-strong);
             transform: translateY(-1px);
-            box-shadow: 0 16px 44px rgba(4,3,2,0.36), inset 0 1px 0 rgba(237,232,220,0.18);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 10px 30px rgba(0,0,0,0.3);
         }
 
         [data-testid="stSidebar"] .stButton > button:hover,
         [data-testid="stSidebar"] .stButton > button:active {
-            background: rgba(227,182,75,0.08);
-            color: var(--co-gold-soft);
+            background: var(--co-graphite);
+            color: var(--co-ink);
             border: 1px solid var(--co-hairline-strong);
         }
 
@@ -182,8 +187,8 @@ def inject_css() -> None:
         a:focus-visible,
         input:focus-visible,
         textarea:focus-visible {
-            box-shadow: 0 0 0 1px rgba(95,195,188,0.34) !important;
-            outline: 1px solid rgba(95,195,188,0.72) !important;
+            box-shadow: 0 0 0 1px rgba(0,153,255,0.35) !important;
+            outline: 1px solid rgba(0,153,255,0.55) !important;
             outline-offset: 4px !important;
         }
 
@@ -192,7 +197,7 @@ def inject_css() -> None:
         [data-baseweb="select"]:focus-within > div,
         [data-baseweb="datepicker"]:focus-within > div {
             border-color: var(--co-patina) !important;
-            box-shadow: 0 0 0 1px rgba(95,195,188,0.34) !important;
+            box-shadow: 0 0 0 1px rgba(0,153,255,0.35) !important;
         }
 
         [data-baseweb="input"] > div,
@@ -231,6 +236,15 @@ def inject_css() -> None:
             background-color: var(--co-surface-1) !important;
             color: var(--co-ink) !important;
             caret-color: var(--co-patina);
+        }
+
+        code {
+            color: var(--co-blue) !important;
+            background: var(--co-surface-2) !important;
+            border: 1px solid var(--co-hairline-soft);
+            border-radius: 5px;
+            padding: 2px 5px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
         }
 
         [data-testid="stTabs"] [role="tablist"] {
@@ -367,21 +381,19 @@ def inject_css() -> None:
             border-radius: 8px;
             padding: 30px;
             background:
-                linear-gradient(112deg, rgba(227,182,75,0.24) 0 1px, transparent 1px 34%),
-                linear-gradient(90deg, rgba(227,182,75,0.13), transparent 42%),
-                linear-gradient(180deg, rgba(95,195,188,0.12), transparent 48%),
-                linear-gradient(135deg, var(--co-surface-2) 0%, var(--co-deep) 100%);
-            border: 1px solid var(--co-hairline-strong);
-            box-shadow: inset 0 1px 0 rgba(237,232,220,0.07), 0 24px 70px rgba(4,3,2,0.42);
+                radial-gradient(circle at 18% 20%, rgba(212,77,240,0.96), transparent 33%),
+                radial-gradient(circle at 78% 18%, rgba(106,76,245,0.9), transparent 35%),
+                radial-gradient(circle at 70% 84%, rgba(255,122,61,0.94), transparent 38%),
+                linear-gradient(135deg, #161616 0%, #0a0a0a 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 60px rgba(0,0,0,0.38);
         }
 
         .co-spotlight::after {
             content: "";
             position: absolute;
             inset: 0;
-            background:
-                linear-gradient(180deg, rgba(17,16,12,0.04), rgba(8,7,4,0.34)),
-                repeating-linear-gradient(90deg, transparent 0 18px, rgba(227,182,75,0.04) 18px 19px);
+            background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.3));
             pointer-events: none;
         }
 
@@ -419,7 +431,7 @@ def inject_css() -> None:
             border-radius: 8px;
             padding: 30px;
             background:
-                linear-gradient(90deg, rgba(95,195,188,0.12), transparent 42%),
+                radial-gradient(circle at 15% 12%, rgba(0,153,255,0.18), transparent 28%),
                 var(--co-surface-2);
             border: 1px solid var(--co-hairline);
             margin: 16px 0 20px;
@@ -450,21 +462,21 @@ def inject_css() -> None:
         }
 
         .pill-low {
-            color: #d7f4dc;
-            background: rgba(109,204,139,0.14);
-            border-color: rgba(109,204,139,0.32);
+            color: #d9ffe7;
+            background: rgba(34,197,94,0.16);
+            border-color: rgba(34,197,94,0.28);
         }
 
         .pill-medium {
-            color: #f7deb0;
-            background: rgba(227,182,75,0.14);
-            border-color: rgba(227,182,75,0.34);
+            color: #ffe4c8;
+            background: rgba(255,122,61,0.16);
+            border-color: rgba(255,122,61,0.28);
         }
 
         .pill-high {
-            color: #f6c6b6;
-            background: rgba(199,106,69,0.16);
-            border-color: rgba(199,106,69,0.38);
+            color: #ffd8e2;
+            background: rgba(255,85,119,0.18);
+            border-color: rgba(255,85,119,0.32);
         }
 
         .small-muted { color: var(--co-muted); font-size: 0.86rem; }
@@ -763,17 +775,17 @@ def architecture() -> None:
         """
         digraph {
           rankdir=LR;
-          graph [bgcolor="#11100c"];
-          node [shape=box, style="rounded,filled", fillcolor="#191812", color="#4f472d", fontname="Aptos", fontcolor="#ede8dc", margin="0.18,0.12"];
-          edge [color="#817867", fontcolor="#aaa18f"];
+          graph [bgcolor="#090909"];
+          node [shape=box, style="rounded,filled", fillcolor="#141414", color="#262626", fontname="Arial", fontcolor="#FFFFFF", margin="0.18,0.12"];
+          edge [color="#999999", fontcolor="#999999"];
           intake [label="Claims Intake Agent"];
           coverage [label="Coverage Verification Agent"];
           evidence [label="Evidence Review Agent"];
           risk [label="Risk & Fraud Triage Agent"];
           comms [label="Communication Agent"];
-          supervisor [label="Supervisor Agent", fillcolor="#242219", color="#e3b64b"];
-          human [label="Human Adjuster Approval", fillcolor="#17332f", color="#5fc3bc"];
-          tools [label="Tools: policy lookup, history, checklist, risk rules, drafts", fillcolor="#302719", color="#e3b64b"];
+          supervisor [label="Supervisor Agent", fillcolor="#1c1c1c", color="#0099ff"];
+          human [label="Human Adjuster Approval", fillcolor="#122318", color="#22c55e"];
+          tools [label="Tools: policy lookup, history, checklist, risk rules, drafts", fillcolor="#241916", color="#ff7a3d"];
           intake -> supervisor;
           supervisor -> coverage;
           supervisor -> evidence;
