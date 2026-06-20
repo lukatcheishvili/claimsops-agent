@@ -1125,7 +1125,6 @@ function Architecture() {
               <path d="M738 258 H 778 C 812 258, 792 138, 824 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
               <path d="M738 258 H 824" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
               <path d="M738 258 H 778 C 812 258, 792 378, 824 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M944 414 V 448" stroke="#22c55e" strokeWidth="2.5" fill="none" />
               <circle cx="430" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
               <circle cx="778" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
             </svg>
@@ -1137,7 +1136,7 @@ function Architecture() {
             <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" />
             <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" />
             <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" />
-            <div className="workflow-terminal" style={{ left: 824, top: 448 }}>
+            <div className="workflow-terminal" style={{ left: 824, top: 432 }}>
               <span>Human-Owned Outcome</span>
               <strong>No final decision is automated.</strong>
             </div>
