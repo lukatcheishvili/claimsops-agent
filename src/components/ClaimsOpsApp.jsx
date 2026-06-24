@@ -122,7 +122,7 @@ const initialVertexState = {
   enabled: false,
   liveRequested: true,
   hasCredentials: false,
-  projectId: "agenticai-500006",
+  projectId: "",
   projectNumber: "***",
   location: "global",
   model: "gemini-2.5-flash",
@@ -131,7 +131,7 @@ const initialVertexState = {
 };
 
 const initialVertexConfig = {
-  projectId: "agenticai-500006",
+  projectId: "",
   projectNumber: "",
   location: "global",
   model: "gemini-2.5-flash",
@@ -174,7 +174,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           ...current,
           ...vertex,
           enabled: false,
-          status: vertex.liveRequested && vertex.hasCredentials ? "ready" : vertex.liveRequested ? "missing_credentials" : "disabled",
+          status: !vertex.projectId ? "missing_project" : vertex.liveRequested && vertex.hasCredentials ? "ready" : vertex.liveRequested ? "missing_credentials" : "disabled",
           message: getVertexConfigMessage(vertex)
         }));
         setVertexConfig((current) => ({
@@ -258,7 +258,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
 
   function getVertexConfigPayload(config = vertexConfig) {
     return {
-      projectId: config.projectId.trim() || "agenticai-500006",
+      projectId: config.projectId.trim(),
       projectNumber: config.projectNumber.trim(),
       location: config.location.trim() || "global",
       model: config.model.trim() || "gemini-2.5-flash",
@@ -441,7 +441,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           <StatusRow label="Workflow" value={vertexState.enabled ? "Vertex AI + Tools" : "Deterministic Agent Tools"} />
           <StatusRow label="Vertex" value={getVertexStatusLabel(vertexState.status)} />
           <StatusRow label="Human Gate" value={approvalState} />
-          <StatusRow label="Vertex Project" value={vertexState.projectId || "agenticai-500006"} code />
+          <StatusRow label="Vertex Project" value={vertexState.projectId || "Not set"} code />
           <StatusRow label="Location" value={vertexState.location || "global"} code />
           <StatusRow label="Model" value={vertexState.model || "gemini-2.5-flash"} code />
           <p className="muted">{workflowNote}</p>
@@ -583,7 +583,7 @@ function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
           id="vertex-project-id"
           value={config.projectId}
           onChange={(event) => onChange("projectId", event.target.value)}
-          placeholder="agenticai-500006"
+          placeholder="your-google-cloud-project-id"
           spellCheck="false"
         />
       </label>
@@ -2178,12 +2178,16 @@ function getVertexStatusLabel(status) {
     live: "Live",
     disabled: "Disabled",
     missing_credentials: "Needs Credentials",
+    missing_project: "Needs Project",
     error: "Fallback Active"
   };
   return labels[status] || "Deterministic";
 }
 
 function getVertexConfigMessage(vertex) {
+  if (!vertex.projectId) {
+    return "Vertex AI live mode needs GOOGLE_CLOUD_PROJECT in a local ignored .env file or deployment environment variable.";
+  }
   if (vertex.liveRequested && vertex.hasCredentials) {
     return "Vertex AI live mode is configured. Load or submit a claim to generate a live review.";
   }

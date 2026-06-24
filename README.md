@@ -18,7 +18,7 @@ The repo contains two working interfaces:
 - **Human Approval Action Log**: approval, evidence request, and escalation actions are recorded.
 - **Manager View**: shows highest-value operational signals: manual queue, evidence blockers, high-risk claims, urgent SLAs, owner load, and recommended management actions.
 - **Vertex Runtime Status**: makes live-mode readiness visible without hiding deterministic fallback behavior.
-- **Sidebar Vertex Config**: lets presenters enter a Project ID and masked Project Number for the active run.
+- **Sidebar Vertex Config**: lets presenters enter local Vertex runtime settings for the active run.
 - **Architecture Popovers**: every architecture node explains why it exists, its role, and its output.
 
 ## Highest-Value Additions
@@ -97,14 +97,13 @@ The Vercel app uses the deterministic JavaScript claims engine in `src/lib/claim
 
 ## Enable Vertex AI On Vercel
 
-The app now requests Vertex AI live mode by default for project `agenticai-500006`. It will show **Ready** or **Live** only when the runtime also has valid service account credentials. It will show **Needs Credentials** if the project settings are present but the private key is missing.
+The app requests Vertex AI live mode by default. It will show **Ready** or **Live** only when the runtime also has valid service account credentials. It will show **Needs Credentials** if the project settings are present but the private key is missing.
 
 Add these environment variables in **Vercel Project Settings -> Environment Variables**:
 
 ```text
 GOOGLE_GENAI_USE_VERTEXAI=true
-GOOGLE_CLOUD_PROJECT=agenticai-500006
-GOOGLE_CLOUD_PROJECT_NUMBER=***
+GOOGLE_CLOUD_PROJECT=<your-project-id>
 GOOGLE_CLOUD_LOCATION=global
 VERTEX_AI_LIVE=true
 VERTEX_AI_MODEL=gemini-2.5-flash
@@ -117,11 +116,11 @@ To explicitly disable live mode for a fallback-only demo, set:
 VERTEX_AI_LIVE=false
 ```
 
-The service account must be allowed to call Vertex AI in project `agenticai-500006`. Do not commit the JSON key. After updating Vercel variables, redeploy the project. In the app, load or submit a claim and open **Agent Review**; the **Vertex AI Live Review** and **Vertex Runtime Status** panels will show either the live review or the exact fallback reason.
+The service account must be allowed to call Vertex AI in your configured Google Cloud project. Do not commit the JSON key. After updating Vercel variables, redeploy the project. In the app, load or submit a claim and open **Agent Review**; the **Vertex AI Live Review** and **Vertex Runtime Status** panels will show either the live review or the exact fallback reason.
 
 The app defaults to `global` and `gemini-2.5-flash` because current Google examples use the global Vertex endpoint for Gemini and older Gemini 2.0 Flash models have reached retirement.
 
-The sidebar also has a **Vertex AI Config** box. Use it to enter the Project ID and Project Number for a specific demo run. The Project Number field is masked in the UI and in API status responses. To clear **Needs Credentials**, paste a service account JSON value into the masked credential field or configure `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel. The sidebar credential is sent only for the active request and is not committed to the repo.
+The sidebar also has a **Vertex AI Config** box. Use it to enter runtime settings for a specific demo run. To clear **Needs Credentials**, paste a service account JSON value into the masked credential field or configure `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel. The sidebar credential is sent only for the active request and is not committed to the repo.
 
 ## Run The Streamlit App
 
@@ -162,8 +161,7 @@ Set:
 ```text
 USE_CREWAI_LIVE=true
 GOOGLE_GENAI_USE_VERTEXAI=true
-GOOGLE_CLOUD_PROJECT=agenticai-500006
-GOOGLE_CLOUD_PROJECT_NUMBER=***
+GOOGLE_CLOUD_PROJECT=<your-project-id>
 GOOGLE_CLOUD_LOCATION=global
 CREWAI_MODEL=gemini/gemini-2.5-flash
 ```
@@ -172,7 +170,7 @@ Authenticate with Google Cloud Application Default Credentials or a service acco
 
 ```powershell
 gcloud auth application-default login
-gcloud config set project agenticai-500006
+gcloud config set project <your-project-id>
 gcloud services enable aiplatform.googleapis.com
 ```
 

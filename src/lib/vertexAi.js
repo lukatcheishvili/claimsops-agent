@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 
-const DEFAULT_PROJECT_ID = "agenticai-500006";
+const DEFAULT_PROJECT_ID = "";
 const DEFAULT_PROJECT_NUMBER = "***";
 const DEFAULT_LOCATION = "global";
 const DEFAULT_MODEL = "gemini-2.5-flash";
@@ -27,6 +27,10 @@ export async function runVertexClaimsReview(analysis, overrides = {}) {
 
   if (!config.liveRequested) {
     return buildStatus("disabled", config, "Vertex AI live mode is explicitly disabled. Set VERTEX_AI_LIVE=true or remove VERTEX_AI_LIVE=false in the deployment environment.", credentials);
+  }
+
+  if (!config.projectId) {
+    return buildStatus("missing_project", config, "Vertex AI live mode is enabled, but GOOGLE_CLOUD_PROJECT is not configured.");
   }
 
   if (!credentials) {

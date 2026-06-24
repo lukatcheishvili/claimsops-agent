@@ -59,6 +59,7 @@ Guardrail:
 
 2026-06-24 pass:
 
+- Moved cloud project identifiers out of tracked README/source defaults and into ignored local environment files. `.env`, `.env.*`, and `.env.local` are ignored, while `.env.example` remains tracked with placeholders only.
 - Updated Vertex AI defaults from the retired Gemini 2.0 Flash path to `gemini-2.5-flash` with `global` location support. The Next.js API route now uses `https://aiplatform.googleapis.com` when location is `global`, while still supporting regional Vertex endpoints.
 - Expanded **Agent Chat** from the hero area into a full-height right-side canvas rail. It now owns the right side of the desktop layout, keeps the active claim summary above the conversation, and gives the chat message stream the remaining vertical space.
 - Kept the existing canvas chat toggle so presenters can hide the right rail when they need more workspace and show it again for agent interaction.
@@ -68,7 +69,7 @@ Guardrail:
 
 - Added a compact **Vertex AI Config** box in the left sidebar. It accepts Project ID, masked Project Number, location, model, and a masked one-time service account JSON value, then reruns the active claim with those settings. The API validates client-provided project settings, parses the credential only for the active request, and continues to return `***` for project number.
 - Clarified the Vertex run path so Project ID and Project Number are treated as settings, not credentials. If no service account JSON is present, Apply And Run stops and shows a targeted credential warning.
-- Changed the Vercel Vertex AI runtime to request live mode by default for project `agenticai-500006`. The UI should no longer show **Disabled** unless `VERTEX_AI_LIVE=false` is explicitly set. If credentials are not present, it will show **Needs Credentials**.
+- Changed the Vercel Vertex AI runtime to request live mode by default from environment settings. The UI should no longer show **Disabled** unless `VERTEX_AI_LIVE=false` is explicitly set. If credentials are not present, it will show **Needs Credentials**.
 - Added local `.env.local` with non-secret Vertex project settings. It is ignored by Git and still requires a real `GOOGLE_SERVICE_ACCOUNT_JSON` value for live calls.
 - Moved **Agent Chat** out of the tab bar and into the right-side canvas rail, with a canvas control button to show or hide it.
 - Added deterministic chat answers for evidence, risk, coverage, routing, architecture, Vertex status, approval gate, and audit history.
@@ -165,10 +166,9 @@ Result:
 
 ## Vertex AI Context
 
-Project settings provided by the user:
+Vertex AI settings:
 
-- Project ID: `agenticai-500006`
-- Project Number: `***`
+- Project identifiers are stored in local ignored `.env` files or deployment environment variables.
 - Location: `global`
 - Model: `gemini-2.5-flash`
 
@@ -176,8 +176,7 @@ Vercel environment variables needed:
 
 ```text
 GOOGLE_GENAI_USE_VERTEXAI=true
-GOOGLE_CLOUD_PROJECT=agenticai-500006
-GOOGLE_CLOUD_PROJECT_NUMBER=***
+GOOGLE_CLOUD_PROJECT=<your-project-id>
 GOOGLE_CLOUD_LOCATION=global
 VERTEX_AI_LIVE=true
 VERTEX_AI_MODEL=gemini-2.5-flash

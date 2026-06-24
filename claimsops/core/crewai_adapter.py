@@ -16,7 +16,7 @@ def crewai_environment_status() -> dict[str, Any]:
     _load_local_env()
     return {
         "crewai_installed": _module_available("crewai"),
-        "vertex_project": os.getenv("GOOGLE_CLOUD_PROJECT", "agenticai-500006"),
+        "vertex_project": os.getenv("GOOGLE_CLOUD_PROJECT", ""),
         "vertex_location": os.getenv("GOOGLE_CLOUD_LOCATION", "global"),
         "model": os.getenv("CREWAI_MODEL", "gemini/gemini-2.5-flash"),
         "live_enabled": os.getenv("USE_CREWAI_LIVE", "false").lower() == "true",
