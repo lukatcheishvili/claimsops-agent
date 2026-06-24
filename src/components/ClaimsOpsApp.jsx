@@ -391,7 +391,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   }
 
   return (
-    <div className={`app-shell ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+    <div className={`app-shell ${sidebarOpen ? "" : "sidebar-collapsed"} ${chatRailOpen ? "chat-open" : "chat-closed"}`}>
       <aside className="sidebar" aria-label="ClaimsOps controls">
         <div className="sidebar-header">
           <span className="brand-mark">CO</span>
@@ -510,11 +510,6 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           analysis={analysis}
           setActiveTab={setActiveTab}
           vertexState={vertexState}
-          approvalState={approvalState}
-          approvalLog={approvalLog}
-          messages={chatMessages}
-          onSend={sendAgentMessage}
-          chatRailOpen={chatRailOpen}
         />
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -547,6 +542,16 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           )}
         </section>
       </main>
+      {chatRailOpen && (
+        <AgentChatRail
+          analysis={analysis}
+          approvalState={approvalState}
+          vertexState={vertexState}
+          approvalLog={approvalLog}
+          messages={chatMessages}
+          onSend={sendAgentMessage}
+        />
+      )}
     </div>
   );
 }
@@ -672,9 +677,9 @@ function DemoGuide({ step, stepIndex, totalSteps, onPrevious, onNext, onEnd }) {
   );
 }
 
-function Hero({ analysis, setActiveTab, vertexState, approvalState, approvalLog, messages, onSend, chatRailOpen }) {
+function Hero({ analysis, setActiveTab, vertexState }) {
   return (
-    <header className={`hero ${chatRailOpen ? "" : "chat-rail-hidden"}`}>
+    <header className="hero">
       <div className="hero-copy">
         <p className="eyebrow">ClaimsOps Agent / Insurance Operations</p>
         <h2>Claims triage on a live operations canvas.</h2>
@@ -684,16 +689,6 @@ function Hero({ analysis, setActiveTab, vertexState, approvalState, approvalLog,
         </p>
         <CapabilityStrip setActiveTab={setActiveTab} vertexState={vertexState} />
       </div>
-      {chatRailOpen && (
-        <AgentChatRail
-          analysis={analysis}
-          approvalState={approvalState}
-          vertexState={vertexState}
-          approvalLog={approvalLog}
-          messages={messages}
-          onSend={onSend}
-        />
-      )}
     </header>
   );
 }

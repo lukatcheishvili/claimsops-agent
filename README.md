@@ -11,7 +11,7 @@ The repo contains two working interfaces:
 
 ## What Is New
 
-- **Right-side Agent Chat Rail**: users can ask the ClaimsOps agent about risk, evidence, coverage, routing, Vertex status, audit history, and architecture without leaving the current workflow tab.
+- **Full-height Agent Chat Rail**: users can ask the ClaimsOps agent about risk, evidence, coverage, routing, Vertex status, audit history, and architecture from a dedicated right-side canvas rail that can be toggled on or off.
 - **Guided Demo Mode**: a step-by-step walkthrough for class presentation.
 - **Evidence Upload Simulation**: missing evidence can be added from the intake form to show how readiness changes.
 - **Downloadable Claim Review**: exports an HTML review package with summary, risk drivers, trace, and approval log.
@@ -179,7 +179,7 @@ Restart Streamlit after changing `.env`. The sidebar should show `Live mode: Tru
 ## Main Workflows
 
 1. **Submit Claim**: load a sample, enter a claim manually, or use the evidence upload simulation.
-2. **Agent Chat Rail**: ask the ClaimsOps agent why it chose a route, what evidence is missing, how risk was scored, or how the architecture works from the right-side chat panel.
+2. **Agent Chat Rail**: ask the ClaimsOps agent why it chose a route, what evidence is missing, how risk was scored, or how the architecture works from the full-height right-side chat rail. Use the canvas chat toggle to hide it when the team needs more workspace.
 3. **Agent Review**: show the recommendation, risk score drivers, coverage logic, evidence logic, history context, Vertex status, and audit trace.
 4. **Communications**: review customer and adjuster drafts, then simulate human approval, evidence request, or manual escalation.
 5. **Operations Dashboard**: inspect queue KPIs, severity distribution, risk vs exposure, evidence readiness, owner workload, and the claims table.
@@ -236,7 +236,7 @@ For UI changes, also verify:
 - Sidebar selected claim text is readable.
 - Estimated claim amount input does not prepend `0`.
 - Submitted evidence labels are human readable.
-- Right-side Agent Chat rail can answer evidence, risk, coverage, route, Vertex, and audit questions.
+- Full-height Agent Chat rail can answer evidence, risk, coverage, route, Vertex, and audit questions, and can be hidden with the canvas chat toggle.
 - Dashboard charts render in dark theme.
 - Architecture workflow lines, nodes, and popovers do not overlap.
 

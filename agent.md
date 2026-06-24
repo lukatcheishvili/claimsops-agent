@@ -1,6 +1,6 @@
 # ClaimsOps Agent Continuation Log
 
-Last updated: 2026-06-20
+Last updated: 2026-06-24
 
 ## Current Objective
 
@@ -29,7 +29,7 @@ The Next.js MVP includes:
 - Sample claim loader.
 - Evidence checklist with human-readable labels.
 - Evidence upload simulation for missing documents.
-- Right-side Agent Chat rail for natural-language interaction with the ClaimsOps agent from any primary workflow tab.
+- Full-height right-side Agent Chat rail for natural-language interaction with the ClaimsOps agent from any primary workflow tab, with a canvas toggle to hide or show it.
 - Agent Review tab with risk, coverage, evidence, history, reasoning trace, Vertex AI panel, and downloadable HTML review report.
 - Communications tab with customer and adjuster drafts plus human approval action log.
 - Operations Dashboard with Recharts visualizations.
@@ -57,13 +57,19 @@ Guardrail:
 
 ## Latest Implementation Log
 
+2026-06-24 pass:
+
+- Expanded **Agent Chat** from the hero area into a full-height right-side canvas rail. It now owns the right side of the desktop layout, keeps the active claim summary above the conversation, and gives the chat message stream the remaining vertical space.
+- Kept the existing canvas chat toggle so presenters can hide the right rail when they need more workspace and show it again for agent interaction.
+- Added responsive behavior so the chat rail stacks as a normal full-width panel on smaller screens instead of squeezing the main claim workflow.
+
 2026-06-20 pass:
 
 - Added a compact **Vertex AI Config** box in the left sidebar. It accepts Project ID, masked Project Number, location, model, and a masked one-time service account JSON value, then reruns the active claim with those settings. The API validates client-provided project settings, parses the credential only for the active request, and continues to return `***` for project number.
 - Clarified the Vertex run path so Project ID and Project Number are treated as settings, not credentials. If no service account JSON is present, Apply And Run stops and shows a targeted credential warning.
 - Changed the Vercel Vertex AI runtime to request live mode by default for project `agenticai-500006`. The UI should no longer show **Disabled** unless `VERTEX_AI_LIVE=false` is explicitly set. If credentials are not present, it will show **Needs Credentials**.
 - Added local `.env.local` with non-secret Vertex project settings. It is ignored by Git and still requires a real `GOOGLE_SERVICE_ACCOUNT_JSON` value for live calls.
-- Moved **Agent Chat** out of the tab bar and into the right-side hero rail, with a canvas control button to show or hide it.
+- Moved **Agent Chat** out of the tab bar and into the right-side canvas rail, with a canvas control button to show or hide it.
 - Added deterministic chat answers for evidence, risk, coverage, routing, architecture, Vertex status, approval gate, and audit history.
 - Added **Guided Demo Mode** with six presentation steps.
 - Added **Evidence Upload Simulation** to close missing-document gaps from the intake form.
@@ -110,7 +116,7 @@ Why it is not 100:
 
 ## Verification Log
 
-Latest verification run from `claimsops-agent-repo`:
+Latest verification run from `claimsops-agent-repo` on 2026-06-24:
 
 ```powershell
 pnpm build
@@ -131,6 +137,10 @@ Invoke-WebRequest http://localhost:3000
 Result:
 
 - HTTP 200.
+
+Secret hygiene check:
+
+- No matches for the exposed private-key or GitHub token fragments in tracked project files. The scan pattern itself was intentionally not stored here so future scans do not match the log text.
 
 Design/security scan:
 

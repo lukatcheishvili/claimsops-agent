@@ -68,8 +68,16 @@ summary:focus-visible {
   transition: grid-template-columns 180ms ease;
 }
 
+.app-shell.chat-open {
+  grid-template-columns: 348px minmax(0, 1fr) clamp(430px, 29vw, 520px);
+}
+
 .app-shell.sidebar-collapsed {
   grid-template-columns: 0 minmax(0, 1fr);
+}
+
+.app-shell.sidebar-collapsed.chat-open {
+  grid-template-columns: 0 minmax(0, 1fr) clamp(430px, 29vw, 520px);
 }
 
 .sidebar {
@@ -478,14 +486,9 @@ code {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(520px, 1fr) minmax(430px, 0.62fr);
-  gap: clamp(22px, 2.4vw, 44px);
-  align-items: stretch;
-  margin: 0 0 28px;
-}
-
-.hero.chat-rail-hidden {
   grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  margin: 0 0 28px;
 }
 
 .hero-copy {
@@ -776,11 +779,19 @@ code {
 }
 
 .agent-chat-rail {
+  position: sticky;
+  top: 0;
   min-width: 0;
+  height: 100vh;
+  max-height: 100vh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 12px;
-  align-self: stretch;
+  align-self: start;
+  overflow: hidden;
+  padding: 20px;
+  border-left: 1px solid var(--co-hairline);
+  background: var(--co-deep);
 }
 
 .rail-claim-summary,
@@ -795,8 +806,8 @@ code {
   position: relative;
   overflow: hidden;
   display: grid;
-  gap: 12px;
-  padding: 18px;
+  gap: 10px;
+  padding: 14px;
   background:
     radial-gradient(circle at 12% 12%, rgba(212, 77, 240, 0.82), transparent 28%),
     radial-gradient(circle at 78% 24%, rgba(106, 76, 245, 0.72), transparent 34%),
@@ -836,18 +847,18 @@ code {
 
 .rail-main {
   display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
 }
 
 .rail-score {
-  width: 104px;
-  height: 104px;
+  width: 88px;
+  height: 88px;
 }
 
 .rail-score strong {
-  font-size: 34px;
+  font-size: 30px;
 }
 
 .rail-main div:last-child {
@@ -858,7 +869,7 @@ code {
 
 .rail-main strong {
   color: var(--co-ink);
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.1;
 }
 
@@ -909,7 +920,8 @@ code {
 
 .rail-chat-panel {
   display: grid;
-  grid-template-rows: auto minmax(168px, 1fr) auto auto;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: 10px;
   padding: 14px;
 }
@@ -1487,8 +1499,9 @@ textarea {
 }
 
 .rail-messages {
-  min-height: 168px;
-  max-height: 244px;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
   gap: 9px;
   padding: 10px;
 }
@@ -2464,8 +2477,16 @@ td {
     grid-template-columns: 320px minmax(0, 1fr);
   }
 
+  .app-shell.chat-open {
+    grid-template-columns: 320px minmax(0, 1fr) minmax(380px, 420px);
+  }
+
   .app-shell.sidebar-collapsed {
     grid-template-columns: 0 minmax(0, 1fr);
+  }
+
+  .app-shell.sidebar-collapsed.chat-open {
+    grid-template-columns: 0 minmax(0, 1fr) minmax(380px, 420px);
   }
 
   .hero,
@@ -2480,14 +2501,6 @@ td {
 
   .capability-grid {
     grid-template-columns: 1fr;
-  }
-
-  .agent-chat-rail {
-    grid-template-rows: auto;
-  }
-
-  .rail-chat-panel {
-    min-height: 420px;
   }
 
   .spotlight {
@@ -2514,7 +2527,15 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .app-shell.chat-open {
+    grid-template-columns: 1fr;
+  }
+
   .app-shell.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell.sidebar-collapsed.chat-open {
     grid-template-columns: 1fr;
   }
 
@@ -2529,6 +2550,19 @@ td {
   .app-shell.sidebar-collapsed .sidebar {
     max-height: 0;
     border-bottom-color: transparent;
+  }
+
+  .agent-chat-rail {
+    position: relative;
+    height: auto;
+    max-height: none;
+    padding: 18px;
+    border-top: 1px solid var(--co-hairline);
+    border-left: 0;
+  }
+
+  .rail-chat-panel {
+    min-height: 520px;
   }
 
   .metrics,
