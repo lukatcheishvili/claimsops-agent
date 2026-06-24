@@ -3,8 +3,8 @@ import fs from "node:fs";
 
 const DEFAULT_PROJECT_ID = "agenticai-500006";
 const DEFAULT_PROJECT_NUMBER = "***";
-const DEFAULT_LOCATION = "us-central1";
-const DEFAULT_MODEL = "gemini-2.0-flash";
+const DEFAULT_LOCATION = "global";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 const DEFAULT_LIVE_REQUESTED = true;
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -109,6 +109,7 @@ function sanitizeProjectNumber(value) {
 
 function sanitizeLocation(value) {
   const text = String(value || "").trim();
+  if (text === "global") return text;
   return /^[a-z]+-[a-z0-9-]+[0-9]$/.test(text) ? text : "";
 }
 
@@ -212,7 +213,8 @@ function signServiceAccountJwt(credentials) {
 
 function buildGenerateContentUrl(config) {
   const model = encodeURIComponent(config.model);
-  return `https://${config.location}-aiplatform.googleapis.com/v1/projects/${config.projectId}/locations/${config.location}/publishers/google/models/${model}:generateContent`;
+  const host = config.location === "global" ? "aiplatform.googleapis.com" : `${config.location}-aiplatform.googleapis.com`;
+  return `https://${host}/v1/projects/${config.projectId}/locations/${config.location}/publishers/google/models/${model}:generateContent`;
 }
 
 function buildVertexRequest(analysis) {

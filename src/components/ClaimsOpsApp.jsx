@@ -124,8 +124,8 @@ const initialVertexState = {
   hasCredentials: false,
   projectId: "agenticai-500006",
   projectNumber: "***",
-  location: "us-central1",
-  model: "gemini-2.0-flash",
+  location: "global",
+  model: "gemini-2.5-flash",
   message: "Checking Vertex AI runtime configuration...",
   review: null
 };
@@ -133,8 +133,8 @@ const initialVertexState = {
 const initialVertexConfig = {
   projectId: "agenticai-500006",
   projectNumber: "",
-  location: "us-central1",
-  model: "gemini-2.0-flash",
+  location: "global",
+  model: "gemini-2.5-flash",
   serviceAccountJson: ""
 };
 
@@ -260,8 +260,8 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     return {
       projectId: config.projectId.trim() || "agenticai-500006",
       projectNumber: config.projectNumber.trim(),
-      location: config.location.trim() || "us-central1",
-      model: config.model.trim() || "gemini-2.0-flash",
+      location: config.location.trim() || "global",
+      model: config.model.trim() || "gemini-2.5-flash",
       serviceAccountJson: config.serviceAccountJson.trim(),
       liveRequested: true
     };
@@ -442,8 +442,8 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           <StatusRow label="Vertex" value={getVertexStatusLabel(vertexState.status)} />
           <StatusRow label="Human Gate" value={approvalState} />
           <StatusRow label="Vertex Project" value={vertexState.projectId || "agenticai-500006"} code />
-          <StatusRow label="Location" value={vertexState.location || "us-central1"} code />
-          <StatusRow label="Model" value={vertexState.model || "gemini-2.0-flash"} code />
+          <StatusRow label="Location" value={vertexState.location || "global"} code />
+          <StatusRow label="Model" value={vertexState.model || "gemini-2.5-flash"} code />
           <p className="muted">{workflowNote}</p>
         </div>
 
@@ -608,7 +608,7 @@ function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
             id="vertex-location"
             value={config.location}
             onChange={(event) => onChange("location", event.target.value)}
-            placeholder="us-central1"
+            placeholder="global"
             spellCheck="false"
           />
         </label>
@@ -618,7 +618,7 @@ function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
             id="vertex-model"
             value={config.model}
             onChange={(event) => onChange("model", event.target.value)}
-            placeholder="gemini-2.0-flash"
+            placeholder="gemini-2.5-flash"
             spellCheck="false"
           />
         </label>

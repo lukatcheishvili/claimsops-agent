@@ -59,6 +59,7 @@ Guardrail:
 
 2026-06-24 pass:
 
+- Updated Vertex AI defaults from the retired Gemini 2.0 Flash path to `gemini-2.5-flash` with `global` location support. The Next.js API route now uses `https://aiplatform.googleapis.com` when location is `global`, while still supporting regional Vertex endpoints.
 - Expanded **Agent Chat** from the hero area into a full-height right-side canvas rail. It now owns the right side of the desktop layout, keeps the active claim summary above the conversation, and gives the chat message stream the remaining vertical space.
 - Kept the existing canvas chat toggle so presenters can hide the right rail when they need more workspace and show it again for agent interaction.
 - Added responsive behavior so the chat rail stacks as a normal full-width panel on smaller screens instead of squeezing the main claim workflow.
@@ -168,8 +169,8 @@ Project settings provided by the user:
 
 - Project ID: `agenticai-500006`
 - Project Number: `***`
-- Location: `us-central1`
-- Model: `gemini-2.0-flash`
+- Location: `global`
+- Model: `gemini-2.5-flash`
 
 Vercel environment variables needed:
 
@@ -177,9 +178,9 @@ Vercel environment variables needed:
 GOOGLE_GENAI_USE_VERTEXAI=true
 GOOGLE_CLOUD_PROJECT=agenticai-500006
 GOOGLE_CLOUD_PROJECT_NUMBER=***
-GOOGLE_CLOUD_LOCATION=us-central1
+GOOGLE_CLOUD_LOCATION=global
 VERTEX_AI_LIVE=true
-VERTEX_AI_MODEL=gemini-2.0-flash
+VERTEX_AI_MODEL=gemini-2.5-flash
 GOOGLE_SERVICE_ACCOUNT_JSON={...service account JSON...}
 ```
 

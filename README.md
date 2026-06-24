@@ -105,9 +105,9 @@ Add these environment variables in **Vercel Project Settings -> Environment Vari
 GOOGLE_GENAI_USE_VERTEXAI=true
 GOOGLE_CLOUD_PROJECT=agenticai-500006
 GOOGLE_CLOUD_PROJECT_NUMBER=***
-GOOGLE_CLOUD_LOCATION=us-central1
+GOOGLE_CLOUD_LOCATION=global
 VERTEX_AI_LIVE=true
-VERTEX_AI_MODEL=gemini-2.0-flash
+VERTEX_AI_MODEL=gemini-2.5-flash
 GOOGLE_SERVICE_ACCOUNT_JSON={...service account JSON...}
 ```
 
@@ -118,6 +118,8 @@ VERTEX_AI_LIVE=false
 ```
 
 The service account must be allowed to call Vertex AI in project `agenticai-500006`. Do not commit the JSON key. After updating Vercel variables, redeploy the project. In the app, load or submit a claim and open **Agent Review**; the **Vertex AI Live Review** and **Vertex Runtime Status** panels will show either the live review or the exact fallback reason.
+
+The app defaults to `global` and `gemini-2.5-flash` because current Google examples use the global Vertex endpoint for Gemini and older Gemini 2.0 Flash models have reached retirement.
 
 The sidebar also has a **Vertex AI Config** box. Use it to enter the Project ID and Project Number for a specific demo run. The Project Number field is masked in the UI and in API status responses. To clear **Needs Credentials**, paste a service account JSON value into the masked credential field or configure `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel. The sidebar credential is sent only for the active request and is not committed to the repo.
 
@@ -162,8 +164,8 @@ USE_CREWAI_LIVE=true
 GOOGLE_GENAI_USE_VERTEXAI=true
 GOOGLE_CLOUD_PROJECT=agenticai-500006
 GOOGLE_CLOUD_PROJECT_NUMBER=***
-GOOGLE_CLOUD_LOCATION=us-central1
-CREWAI_MODEL=gemini/gemini-2.0-flash
+GOOGLE_CLOUD_LOCATION=global
+CREWAI_MODEL=gemini/gemini-2.5-flash
 ```
 
 Authenticate with Google Cloud Application Default Credentials or a service account that can call Vertex AI:

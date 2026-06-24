@@ -17,8 +17,8 @@ def crewai_environment_status() -> dict[str, Any]:
     return {
         "crewai_installed": _module_available("crewai"),
         "vertex_project": os.getenv("GOOGLE_CLOUD_PROJECT", "agenticai-500006"),
-        "vertex_location": os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1"),
-        "model": os.getenv("CREWAI_MODEL", "gemini/gemini-2.0-flash"),
+        "vertex_location": os.getenv("GOOGLE_CLOUD_LOCATION", "global"),
+        "model": os.getenv("CREWAI_MODEL", "gemini/gemini-2.5-flash"),
         "live_enabled": os.getenv("USE_CREWAI_LIVE", "false").lower() == "true",
         "vertex_enabled": os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "true").lower() == "true",
         "storage_dir": str(CREWAI_STATE_DIR),
