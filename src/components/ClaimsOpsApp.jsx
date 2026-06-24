@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
-  Bot,
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
@@ -61,7 +60,6 @@ import {
 
 const tabs = [
   { id: "submit", label: "Submit Claim", icon: FileText },
-  { id: "agent", label: "Agent Chat", icon: Bot },
   { id: "review", label: "Agent Review", icon: ShieldCheck },
   { id: "communications", label: "Communications", icon: MessageSquare },
   { id: "dashboard", label: "Operations Dashboard", icon: LayoutDashboard },
@@ -77,9 +75,9 @@ const demoSteps = [
     body: "Start with a sample claim or enter a new claim. The intake form controls the facts every agent will use."
   },
   {
-    tab: "agent",
+    tab: "submit",
     title: "Ask The ClaimsOps Agent",
-    body: "Use the chat to ask why the route was chosen, what evidence is missing, or whether the claim can move forward."
+    body: "Use the right-side chat rail to ask why the route was chosen, what evidence is missing, or whether the claim can move forward."
   },
   {
     tab: "review",
@@ -150,6 +148,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [vertexState, setVertexState] = useState(initialVertexState);
   const [vertexConfig, setVertexConfig] = useState(initialVertexConfig);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [chatRailOpen, setChatRailOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [demoActive, setDemoActive] = useState(false);
   const [demoStepIndex, setDemoStepIndex] = useState(0);
@@ -469,6 +468,16 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           <button
             type="button"
             className="icon-button"
+            aria-label={chatRailOpen ? "Hide agent chat" : "Show agent chat"}
+            title={chatRailOpen ? "Hide agent chat" : "Show agent chat"}
+            aria-pressed={chatRailOpen}
+            onClick={() => setChatRailOpen((current) => !current)}
+          >
+            <MessageSquare aria-hidden="true" size={17} />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
             aria-label={sidebarOpen ? "Hide controls panel" : "Show controls panel"}
             title={sidebarOpen ? "Hide controls panel" : "Show controls panel"}
             aria-pressed={!sidebarOpen}
@@ -497,22 +506,21 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
             onEnd={stopGuidedDemo}
           />
         )}
-        <Hero analysis={analysis} setActiveTab={setActiveTab} vertexState={vertexState} />
+        <Hero
+          analysis={analysis}
+          setActiveTab={setActiveTab}
+          vertexState={vertexState}
+          approvalState={approvalState}
+          approvalLog={approvalLog}
+          messages={chatMessages}
+          onSend={sendAgentMessage}
+          chatRailOpen={chatRailOpen}
+        />
         <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <section className="tab-panel" aria-live="polite">
           {activeTab === "submit" && (
             <SubmitClaimForm draft={draft} setDraft={setDraft} runWorkflow={runWorkflow} />
-          )}
-          {activeTab === "agent" && (
-            <AgentChat
-              analysis={analysis}
-              approvalState={approvalState}
-              vertexState={vertexState}
-              approvalLog={approvalLog}
-              messages={chatMessages}
-              onSend={sendAgentMessage}
-            />
           )}
           {activeTab === "review" && (
             <AgentReview
@@ -664,13 +672,9 @@ function DemoGuide({ step, stepIndex, totalSteps, onPrevious, onNext, onEnd }) {
   );
 }
 
-function Hero({ analysis, setActiveTab, vertexState }) {
-  const { claim, coverage, evidence, risk, recommendation } = analysis;
-  const evidencePercent = Math.round(evidence.completion * 100);
-  const scoreAngle = `${risk.score * 3.6}deg`;
-
+function Hero({ analysis, setActiveTab, vertexState, approvalState, approvalLog, messages, onSend, chatRailOpen }) {
   return (
-    <header className="hero">
+    <header className={`hero ${chatRailOpen ? "" : "chat-rail-hidden"}`}>
       <div className="hero-copy">
         <p className="eyebrow">ClaimsOps Agent / Insurance Operations</p>
         <h2>Claims triage on a live operations canvas.</h2>
@@ -680,49 +684,16 @@ function Hero({ analysis, setActiveTab, vertexState }) {
         </p>
         <CapabilityStrip setActiveTab={setActiveTab} vertexState={vertexState} />
       </div>
-      <div className="spotlight" aria-label="Active claim summary">
-        <div className="spotlight-top">
-          <span className="spotlight-label">Active Claim</span>
-          <SeverityPill severity={risk.severity} />
-        </div>
-
-        <div className="spotlight-main">
-          <div className="spotlight-score" style={{ "--score-angle": scoreAngle }}>
-            <strong>{risk.score}</strong>
-            <span>/100</span>
-          </div>
-          <div className="spotlight-claim">
-            <span>{claim.claim_id}</span>
-            <strong>{claim.insurance_type} claim</strong>
-            <p>{claim.customer_name}</p>
-            <small>EUR {numberFormat(claim.claim_amount)} estimated exposure</small>
-          </div>
-        </div>
-
-        <div className="spotlight-kpis">
-          <div>
-            <span>Coverage</span>
-            <strong>{coverage.covered ? "Clear" : "Review"}</strong>
-          </div>
-          <div>
-            <span>Evidence</span>
-            <strong>{evidencePercent}%</strong>
-          </div>
-          <div>
-            <span>SLA</span>
-            <strong>{recommendation.sla}</strong>
-          </div>
-          <div>
-            <span>Owner</span>
-            <strong>{recommendation.owner}</strong>
-          </div>
-        </div>
-
-        <div className="spotlight-action">
-          <span>Recommended Action</span>
-          <p>{recommendation.action}</p>
-        </div>
-      </div>
+      {chatRailOpen && (
+        <AgentChatRail
+          analysis={analysis}
+          approvalState={approvalState}
+          vertexState={vertexState}
+          approvalLog={approvalLog}
+          messages={messages}
+          onSend={onSend}
+        />
+      )}
     </header>
   );
 }
@@ -997,14 +968,16 @@ function AmountField({ value, onChange }) {
   );
 }
 
-function AgentChat({ analysis, approvalState, vertexState, approvalLog, messages, onSend }) {
+function AgentChatRail({ analysis, approvalState, vertexState, approvalLog, messages, onSend }) {
   const [draft, setDraft] = useState("");
+  const { claim, coverage, evidence, risk, recommendation } = analysis;
+  const evidencePercent = Math.round(evidence.completion * 100);
+  const scoreAngle = `${risk.score * 3.6}deg`;
   const prompts = [
     "What should happen next?",
     "Why is this the risk score?",
     "What evidence is missing?",
-    "Can this be approved automatically?",
-    "Explain the architecture"
+    "Can this be approved automatically?"
   ];
 
   function submitMessage(event) {
@@ -1014,16 +987,49 @@ function AgentChat({ analysis, approvalState, vertexState, approvalLog, messages
   }
 
   return (
-    <div className="chat-layout">
-      <section className="panel chat-panel">
-        <div className="panel-heading">
-          <div>
-            <h3>ClaimsOps Agent Chat</h3>
-            <p>Ask about the active claim, routing logic, missing evidence, safety gates, or architecture.</p>
-          </div>
-          <span className="runtime-badge">{vertexState.enabled ? "Vertex Assisted" : "Deterministic"}</span>
+    <aside className="agent-chat-rail" aria-label="ClaimsOps Agent chat">
+      <div className="rail-claim-summary">
+        <div className="rail-topline">
+          <span>Active Claim</span>
+          <SeverityPill severity={risk.severity} />
         </div>
-        <div className="chat-messages" aria-live="polite">
+
+        <div className="rail-main">
+          <div className="spotlight-score rail-score" style={{ "--score-angle": scoreAngle }}>
+            <strong>{risk.score}</strong>
+            <span>/100</span>
+          </div>
+          <div>
+            <span>{claim.claim_id}</span>
+            <strong>{claim.insurance_type} claim</strong>
+            <p>{claim.customer_name}</p>
+            <small>EUR {numberFormat(claim.claim_amount)} exposure</small>
+          </div>
+        </div>
+
+        <dl className="rail-kpis">
+          <div><dt>Coverage</dt><dd>{coverage.covered ? "Clear" : "Review"}</dd></div>
+          <div><dt>Evidence</dt><dd>{evidencePercent}%</dd></div>
+          <div><dt>Owner</dt><dd>{recommendation.owner}</dd></div>
+          <div><dt>Human Gate</dt><dd>{approvalState}</dd></div>
+          <div><dt>Audit Events</dt><dd>{approvalLog.length}</dd></div>
+        </dl>
+
+        <div className="rail-action">
+          <span>Recommended Action</span>
+          <p>{recommendation.action}</p>
+        </div>
+      </div>
+
+      <section className="rail-chat-panel">
+        <div className="rail-chat-header">
+          <div>
+            <h3>ClaimsOps Agent</h3>
+            <p>Ask about routing, evidence, risk, or approval.</p>
+          </div>
+          <span className="runtime-badge">{vertexState.enabled ? "Vertex" : "Tools"}</span>
+        </div>
+        <div className="chat-messages rail-messages" aria-live="polite">
           {messages.map((message) => (
             <article className={`chat-message ${message.role}`} key={message.id}>
               <span>{message.role === "assistant" ? "ClaimsOps Agent" : "You"}</span>
@@ -1031,39 +1037,26 @@ function AgentChat({ analysis, approvalState, vertexState, approvalLog, messages
             </article>
           ))}
         </div>
-        <form className="chat-input-row" onSubmit={submitMessage}>
-          <input
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="Ask the agent about this claim..."
-            aria-label="Ask the ClaimsOps Agent"
-          />
-          <button type="submit" className="button primary">
-            <Send aria-hidden="true" size={16} />
-            Send
-          </button>
-        </form>
-      </section>
-
-      <aside className="panel agent-context-panel">
-        <h3>Agent Context</h3>
-        <dl className="detail-list compact">
-          <div><dt>Claim</dt><dd>{analysis.claim.claim_id}</dd></div>
-          <div><dt>Risk</dt><dd>{analysis.risk.score}/100, {analysis.risk.severity}</dd></div>
-          <div><dt>Evidence</dt><dd>{analysis.evidence.missing.length ? `${analysis.evidence.missing.length} missing` : "Complete"}</dd></div>
-          <div><dt>Route</dt><dd>{analysis.recommendation.owner}</dd></div>
-          <div><dt>Human Gate</dt><dd>{approvalState}</dd></div>
-          <div><dt>Audit Events</dt><dd>{approvalLog.length}</dd></div>
-        </dl>
-        <div className="prompt-grid">
+        <div className="prompt-grid rail-prompts">
           {prompts.map((prompt) => (
             <button type="button" className="button ghost" key={prompt} onClick={() => onSend(prompt)}>
               {prompt}
             </button>
           ))}
         </div>
-      </aside>
-    </div>
+        <form className="chat-input-row rail-input" onSubmit={submitMessage}>
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Ask the agent..."
+            aria-label="Ask the ClaimsOps Agent"
+          />
+          <button type="submit" className="button primary" aria-label="Send chat message">
+            <Send aria-hidden="true" size={16} />
+          </button>
+        </form>
+      </section>
+    </aside>
   );
 }
 

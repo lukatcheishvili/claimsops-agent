@@ -29,7 +29,7 @@ The Next.js MVP includes:
 - Sample claim loader.
 - Evidence checklist with human-readable labels.
 - Evidence upload simulation for missing documents.
-- Agent Chat tab for natural-language interaction with the ClaimsOps agent.
+- Right-side Agent Chat rail for natural-language interaction with the ClaimsOps agent from any primary workflow tab.
 - Agent Review tab with risk, coverage, evidence, history, reasoning trace, Vertex AI panel, and downloadable HTML review report.
 - Communications tab with customer and adjuster drafts plus human approval action log.
 - Operations Dashboard with Recharts visualizations.
@@ -63,7 +63,7 @@ Guardrail:
 - Clarified the Vertex run path so Project ID and Project Number are treated as settings, not credentials. If no service account JSON is present, Apply And Run stops and shows a targeted credential warning.
 - Changed the Vercel Vertex AI runtime to request live mode by default for project `agenticai-500006`. The UI should no longer show **Disabled** unless `VERTEX_AI_LIVE=false` is explicitly set. If credentials are not present, it will show **Needs Credentials**.
 - Added local `.env.local` with non-secret Vertex project settings. It is ignored by Git and still requires a real `GOOGLE_SERVICE_ACCOUNT_JSON` value for live calls.
-- Added **Agent Chat** as a dedicated tab.
+- Moved **Agent Chat** out of the tab bar and into the right-side hero rail, with a canvas control button to show or hide it.
 - Added deterministic chat answers for evidence, risk, coverage, routing, architecture, Vertex status, approval gate, and audit history.
 - Added **Guided Demo Mode** with six presentation steps.
 - Added **Evidence Upload Simulation** to close missing-document gaps from the intake form.
@@ -185,7 +185,7 @@ A GitHub token was shared in chat earlier in the project. Do not write it into f
 
 Highest-value next steps:
 
-1. Add a real LLM chat path behind the Agent Chat tab using the existing `/api/claimsops/analyze` route or a new `/api/claimsops/chat` route.
+1. Add a real LLM chat path behind the right-side Agent Chat rail using the existing `/api/claimsops/analyze` route or a new `/api/claimsops/chat` route.
 2. Store approval events in a lightweight persistence layer if the class demo needs multi-session history.
 3. Add a PDF export option in addition to HTML.
 4. Add a small Cypress or Playwright smoke test for tabs, chat, architecture popovers, and report download.

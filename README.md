@@ -11,7 +11,7 @@ The repo contains two working interfaces:
 
 ## What Is New
 
-- **Agent Chat**: users can ask the ClaimsOps agent about risk, evidence, coverage, routing, Vertex status, audit history, and architecture.
+- **Right-side Agent Chat Rail**: users can ask the ClaimsOps agent about risk, evidence, coverage, routing, Vertex status, audit history, and architecture without leaving the current workflow tab.
 - **Guided Demo Mode**: a step-by-step walkthrough for class presentation.
 - **Evidence Upload Simulation**: missing evidence can be added from the intake form to show how readiness changes.
 - **Downloadable Claim Review**: exports an HTML review package with summary, risk drivers, trace, and approval log.
@@ -179,7 +179,7 @@ Restart Streamlit after changing `.env`. The sidebar should show `Live mode: Tru
 ## Main Workflows
 
 1. **Submit Claim**: load a sample, enter a claim manually, or use the evidence upload simulation.
-2. **Agent Chat**: ask the ClaimsOps agent why it chose a route, what evidence is missing, how risk was scored, or how the architecture works.
+2. **Agent Chat Rail**: ask the ClaimsOps agent why it chose a route, what evidence is missing, how risk was scored, or how the architecture works from the right-side chat panel.
 3. **Agent Review**: show the recommendation, risk score drivers, coverage logic, evidence logic, history context, Vertex status, and audit trace.
 4. **Communications**: review customer and adjuster drafts, then simulate human approval, evidence request, or manual escalation.
 5. **Operations Dashboard**: inspect queue KPIs, severity distribution, risk vs exposure, evidence readiness, owner workload, and the claims table.
@@ -236,7 +236,7 @@ For UI changes, also verify:
 - Sidebar selected claim text is readable.
 - Estimated claim amount input does not prepend `0`.
 - Submitted evidence labels are human readable.
-- Agent Chat can answer evidence, risk, coverage, route, Vertex, and audit questions.
+- Right-side Agent Chat rail can answer evidence, risk, coverage, route, Vertex, and audit questions.
 - Dashboard charts render in dark theme.
 - Architecture workflow lines, nodes, and popovers do not overlap.
 
