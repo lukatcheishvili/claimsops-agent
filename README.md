@@ -11,14 +11,14 @@ The repo contains two working interfaces:
 
 ## What Is New
 
-- **Full-height Agent Chat Rail**: users can ask the ClaimsOps agent about risk, evidence, coverage, routing, Vertex status, audit history, and architecture from a dedicated right-side canvas rail that can be toggled on or off.
+- **Resizable Agent Chat Rail**: users can ask the ClaimsOps agent about risk, evidence, coverage, routing, Vertex status, audit history, and architecture from a dedicated right-side chat rail. The rail can be toggled on/off or dragged wider from its left edge.
 - **Guided Demo Mode**: a step-by-step walkthrough for class presentation.
 - **Evidence Upload Simulation**: missing evidence can be added from the intake form to show how readiness changes.
 - **Downloadable Claim Review**: exports an HTML review package with summary, risk drivers, trace, and approval log.
 - **Human Approval Action Log**: approval, evidence request, and escalation actions are recorded.
 - **Manager View**: shows highest-value operational signals: manual queue, evidence blockers, high-risk claims, urgent SLAs, owner load, and recommended management actions.
 - **Vertex Runtime Status**: makes live-mode readiness visible without hiding deterministic fallback behavior.
-- **Sidebar Vertex Config**: lets presenters enter local Vertex runtime settings for the active run.
+- **Left Workspace Rail**: claim controls, workspace tabs, and local Vertex runtime settings stay together on the left while outputs stay in the center.
 - **Architecture Popovers**: every architecture node explains why it exists, its role, and its output.
 
 ## Highest-Value Additions
@@ -179,7 +179,7 @@ Restart Streamlit after changing `.env`. The sidebar should show `Live mode: Tru
 ## Main Workflows
 
 1. **Submit Claim**: load a sample, enter a claim manually, or use the evidence upload simulation.
-2. **Agent Chat Rail**: ask the ClaimsOps agent why it chose a route, what evidence is missing, how risk was scored, or how the architecture works from the full-height right-side chat rail. Use the canvas chat toggle to hide it when the team needs more workspace.
+2. **Agent Chat Rail**: ask the ClaimsOps agent why it chose a route, what evidence is missing, how risk was scored, or how the architecture works from the right-side chat rail. Drag the rail's left edge to give the chatbot more room, or use the canvas chat toggle to hide it.
 3. **Agent Review**: show the recommendation, risk score drivers, coverage logic, evidence logic, history context, Vertex status, and audit trace.
 4. **Communications**: review customer and adjuster drafts, then simulate human approval, evidence request, or manual escalation.
 5. **Operations Dashboard**: inspect queue KPIs, severity distribution, risk vs exposure, evidence readiness, owner workload, and the claims table.
@@ -236,7 +236,7 @@ For UI changes, also verify:
 - Sidebar selected claim text is readable.
 - Estimated claim amount input does not prepend `0`.
 - Submitted evidence labels are human readable.
-- Full-height Agent Chat rail can answer evidence, risk, coverage, route, Vertex, and audit questions, and can be hidden with the canvas chat toggle.
+- Right-side Agent Chat rail can answer evidence, risk, coverage, route, Vertex, and audit questions, provide compact visual answer cards, resize by dragging its left edge, and be hidden with the canvas chat toggle.
 - Dashboard charts render in dark theme.
 - Architecture workflow lines, nodes, and popovers do not overlap.
 

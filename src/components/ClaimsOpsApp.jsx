@@ -149,6 +149,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [vertexConfig, setVertexConfig] = useState(initialVertexConfig);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [chatRailOpen, setChatRailOpen] = useState(true);
+  const [chatRailWidth, setChatRailWidth] = useState(460);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [demoActive, setDemoActive] = useState(false);
   const [demoStepIndex, setDemoStepIndex] = useState(0);
@@ -319,6 +320,38 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     ]);
   }
 
+  function startChatResize(event) {
+    event.preventDefault();
+    const startWidth = chatRailWidth;
+    const startX = event.clientX;
+
+    function clampWidth(width) {
+      const leftWidth = sidebarOpen ? 348 : 0;
+      const maxWidth = Math.max(420, Math.min(860, window.innerWidth - leftWidth - 360));
+      return Math.max(360, Math.min(maxWidth, width));
+    }
+
+    function handlePointerMove(moveEvent) {
+      setChatRailWidth(clampWidth(startWidth + startX - moveEvent.clientX));
+    }
+
+    function stopResize() {
+      document.body.classList.remove("is-resizing-chat");
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+      window.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("mouseup", stopResize);
+    }
+
+    document.body.classList.add("is-resizing-chat");
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
+    window.addEventListener("mousemove", handlePointerMove);
+    window.addEventListener("mouseup", stopResize);
+  }
+
   function startGuidedDemo() {
     setDemoActive(true);
     setDemoStepIndex(0);
@@ -391,7 +424,10 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   }
 
   return (
-    <div className={`app-shell ${sidebarOpen ? "" : "sidebar-collapsed"} ${chatRailOpen ? "chat-open" : "chat-closed"}`}>
+    <div
+      className={`app-shell ${sidebarOpen ? "" : "sidebar-collapsed"} ${chatRailOpen ? "chat-open" : "chat-closed"}`}
+      style={{ "--chat-rail-width": `${chatRailWidth}px` }}
+    >
       <aside className="sidebar" aria-label="ClaimsOps controls">
         <div className="sidebar-header">
           <span className="brand-mark">CO</span>
@@ -434,6 +470,11 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
             New Claim
           </button>
         </div>
+
+        <nav className="sidebar-nav" aria-label="ClaimsOps workspace tabs">
+          <span className="section-label">Workspace</span>
+          <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        </nav>
 
         <div className="sidebar-status">
           <p className="section-label">CrewAI / Vertex AI</p>
@@ -511,7 +552,6 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           setActiveTab={setActiveTab}
           vertexState={vertexState}
         />
-        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <section className="tab-panel" aria-live="polite">
           {activeTab === "submit" && (
@@ -545,11 +585,10 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
       {chatRailOpen && (
         <AgentChatRail
           analysis={analysis}
-          approvalState={approvalState}
           vertexState={vertexState}
-          approvalLog={approvalLog}
           messages={chatMessages}
           onSend={sendAgentMessage}
+          onResizeStart={startChatResize}
         />
       )}
     </div>
@@ -963,16 +1002,15 @@ function AmountField({ value, onChange }) {
   );
 }
 
-function AgentChatRail({ analysis, approvalState, vertexState, approvalLog, messages, onSend }) {
+function AgentChatRail({ analysis, vertexState, messages, onSend, onResizeStart }) {
   const [draft, setDraft] = useState("");
-  const { claim, coverage, evidence, risk, recommendation } = analysis;
+  const { claim, evidence, risk } = analysis;
   const evidencePercent = Math.round(evidence.completion * 100);
-  const scoreAngle = `${risk.score * 3.6}deg`;
   const prompts = [
     "What should happen next?",
     "Why is this the risk score?",
     "What evidence is missing?",
-    "Can this be approved automatically?"
+    "Show a quick visualization"
   ];
 
   function submitMessage(event) {
@@ -983,44 +1021,20 @@ function AgentChatRail({ analysis, approvalState, vertexState, approvalLog, mess
 
   return (
     <aside className="agent-chat-rail" aria-label="ClaimsOps Agent chat">
-      <div className="rail-claim-summary">
-        <div className="rail-topline">
-          <span>Active Claim</span>
-          <SeverityPill severity={risk.severity} />
-        </div>
-
-        <div className="rail-main">
-          <div className="spotlight-score rail-score" style={{ "--score-angle": scoreAngle }}>
-            <strong>{risk.score}</strong>
-            <span>/100</span>
-          </div>
-          <div>
-            <span>{claim.claim_id}</span>
-            <strong>{claim.insurance_type} claim</strong>
-            <p>{claim.customer_name}</p>
-            <small>EUR {numberFormat(claim.claim_amount)} exposure</small>
-          </div>
-        </div>
-
-        <dl className="rail-kpis">
-          <div><dt>Coverage</dt><dd>{coverage.covered ? "Clear" : "Review"}</dd></div>
-          <div><dt>Evidence</dt><dd>{evidencePercent}%</dd></div>
-          <div><dt>Owner</dt><dd>{recommendation.owner}</dd></div>
-          <div><dt>Human Gate</dt><dd>{approvalState}</dd></div>
-          <div><dt>Audit Events</dt><dd>{approvalLog.length}</dd></div>
-        </dl>
-
-        <div className="rail-action">
-          <span>Recommended Action</span>
-          <p>{recommendation.action}</p>
-        </div>
-      </div>
+      <button
+        type="button"
+        className="chat-resize-handle"
+        aria-label="Resize agent chat"
+        title="Drag to resize chat"
+        onPointerDown={onResizeStart}
+        onMouseDown={onResizeStart}
+      />
 
       <section className="rail-chat-panel">
         <div className="rail-chat-header">
           <div>
             <h3>ClaimsOps Agent</h3>
-            <p>Ask about routing, evidence, risk, or approval.</p>
+            <p>{claim.claim_id} · {risk.score}/100 {risk.severity.toLowerCase()} risk · {evidencePercent}% evidence</p>
           </div>
           <span className="runtime-badge">{vertexState.enabled ? "Vertex" : "Tools"}</span>
         </div>
@@ -1029,6 +1043,7 @@ function AgentChatRail({ analysis, approvalState, vertexState, approvalLog, mess
             <article className={`chat-message ${message.role}`} key={message.id}>
               <span>{message.role === "assistant" ? "ClaimsOps Agent" : "You"}</span>
               <p>{message.content}</p>
+              {message.visual ? <ChatMessageVisual visual={message.visual} /> : null}
             </article>
           ))}
         </div>
@@ -1931,11 +1946,33 @@ function PromptPack({ promptPack, skillContract }) {
 }
 
 function createChatMessage(role, content) {
+  const payload = typeof content === "string" ? { content } : content;
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     role,
-    content
+    content: payload.content,
+    visual: payload.visual || null
   };
+}
+
+function ChatMessageVisual({ visual }) {
+  if (!visual?.items?.length) return null;
+  return (
+    <div className={`chat-visual ${visual.type || "summary"}`} aria-label={visual.title}>
+      <strong>{visual.title}</strong>
+      <div className="chat-visual-bars">
+        {visual.items.map((item) => (
+          <div className="chat-visual-row" key={item.label}>
+            <span>{item.label}</span>
+            <div className="chat-visual-track">
+              <i style={{ width: `${Math.max(4, Math.min(100, item.value))}%`, background: item.color }} />
+            </div>
+            <em>{item.detail}</em>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function createApprovalLogEntry(actor, detail, claimId) {
@@ -1966,16 +2003,22 @@ function answerAgentQuestion(question, analysis, approvalState, vertexState, app
     .slice(0, 3);
 
   if (q.includes("evidence") || q.includes("document") || q.includes("missing")) {
-    return missing.length
-      ? `The evidence review agent found these missing items: ${missing.join(", ")}. That matters because settlement review should pause until the claim file contains the required documents for a ${analysis.claim.insurance_type.toLowerCase()} claim.`
-      : "The evidence review agent found that all required documents are present for this insurance line. The claim can move to the next human-reviewed step unless risk or coverage checks require a specialist.";
+    return {
+      content: missing.length
+        ? `The evidence review agent found these missing items: ${missing.join(", ")}. That matters because settlement review should pause until the claim file contains the required documents for a ${analysis.claim.insurance_type.toLowerCase()} claim.`
+        : "The evidence review agent found that all required documents are present for this insurance line. The claim can move to the next human-reviewed step unless risk or coverage checks require a specialist.",
+      visual: buildChatVisual("evidence", analysis)
+    };
   }
 
   if (q.includes("risk") || q.includes("score") || q.includes("why")) {
     const driverText = topDrivers.length
       ? topDrivers.map((driver) => `${driver.label} (${driver.impact > 0 ? "+" : ""}${driver.impact}): ${driver.detail}`).join(" ")
       : "No major risk drivers were detected beyond baseline intake review.";
-    return `The risk score is ${analysis.risk.score}/100, which is ${analysis.risk.severity.toLowerCase()} severity. Main drivers: ${driverText} The urgency is ${analysis.risk.urgency}.`;
+    return {
+      content: `The risk score is ${analysis.risk.score}/100, which is ${analysis.risk.severity.toLowerCase()} severity. Main drivers: ${driverText} The urgency is ${analysis.risk.urgency}.`,
+      visual: buildChatVisual("risk", analysis)
+    };
   }
 
   if (q.includes("approve") || q.includes("automatic") || q.includes("human") || q.includes("gate")) {
@@ -1983,12 +2026,25 @@ function answerAgentQuestion(question, analysis, approvalState, vertexState, app
   }
 
   if (q.includes("next") || q.includes("route") || q.includes("action") || q.includes("owner")) {
-    return `Next action: ${analysis.recommendation.action}. Owner: ${analysis.recommendation.owner}. SLA: ${analysis.recommendation.sla}. Rationale: ${analysis.recommendation.rationale}`;
+    return {
+      content: `Next action: ${analysis.recommendation.action}. Owner: ${analysis.recommendation.owner}. SLA: ${analysis.recommendation.sla}. Rationale: ${analysis.recommendation.rationale}`,
+      visual: buildChatVisual("overview", analysis)
+    };
   }
 
   if (q.includes("coverage") || q.includes("policy")) {
     const limit = analysis.coverage.limit ? ` The claim limit is EUR ${numberFormat(analysis.coverage.limit)} and deductible is EUR ${numberFormat(analysis.coverage.deductible)}.` : "";
-    return `Coverage status is ${analysis.coverage.status.replace("_", " ")}. ${analysis.coverage.reason}${limit}`;
+    return {
+      content: `Coverage status is ${analysis.coverage.status.replace("_", " ")}. ${analysis.coverage.reason}${limit}`,
+      visual: buildChatVisual("coverage", analysis)
+    };
+  }
+
+  if (q.includes("visual") || q.includes("chart") || q.includes("graph") || q.includes("dashboard")) {
+    return {
+      content: `Here is the quick visual read on ${analysis.claim.claim_id}: risk is ${analysis.risk.score}/100, evidence is ${Math.round(analysis.evidence.completion * 100)}%, and coverage is ${analysis.coverage.covered ? "clear" : "in review"}.`,
+      visual: buildChatVisual("overview", analysis)
+    };
   }
 
   if (q.includes("architecture") || q.includes("agent") || q.includes("workflow")) {
@@ -2007,6 +2063,64 @@ function answerAgentQuestion(question, analysis, approvalState, vertexState, app
   }
 
   return `For ${analysis.claim.claim_id}, I can explain evidence, risk, coverage, routing, Vertex status, architecture, or the approval audit log. Current recommendation: ${analysis.recommendation.action}.`;
+}
+
+function buildChatVisual(type, analysis) {
+  const evidencePercent = Math.round(analysis.evidence.completion * 100);
+  const coverageValue = analysis.coverage.covered ? 100 : 45;
+  const severityColor = analysis.risk.severity === "High" ? chartColors.coral : analysis.risk.severity === "Medium" ? chartColors.orange : chartColors.success;
+
+  if (type === "risk") {
+    const topDrivers = [...analysis.risk.contributions]
+      .filter((item) => item.label !== "Baseline intake risk")
+      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
+      .slice(0, 3);
+    return {
+      type,
+      title: "Risk Driver View",
+      items: [
+        { label: "Risk Score", value: analysis.risk.score, detail: `${analysis.risk.score}/100`, color: severityColor },
+        ...topDrivers.map((driver) => ({
+          label: driver.label,
+          value: Math.min(100, Math.abs(driver.impact) * 5),
+          detail: `${driver.impact > 0 ? "+" : ""}${driver.impact}`,
+          color: driver.impact > 0 ? chartColors.orange : chartColors.success
+        }))
+      ]
+    };
+  }
+
+  if (type === "evidence") {
+    return {
+      type,
+      title: "Evidence Readiness",
+      items: [
+        { label: "Submitted", value: evidencePercent, detail: `${evidencePercent}%`, color: chartColors.blue },
+        { label: "Missing", value: Math.round((1 - analysis.evidence.completion) * 100), detail: `${analysis.evidence.missing.length} items`, color: analysis.evidence.missing.length ? chartColors.orange : chartColors.success }
+      ]
+    };
+  }
+
+  if (type === "coverage") {
+    return {
+      type,
+      title: "Coverage Snapshot",
+      items: [
+        { label: "Coverage", value: coverageValue, detail: analysis.coverage.covered ? "Clear" : "Review", color: analysis.coverage.covered ? chartColors.success : chartColors.orange },
+        { label: "Exposure", value: Math.min(100, Math.round((analysis.claim.claim_amount / Math.max(analysis.coverage.limit || analysis.claim.claim_amount, 1)) * 100)), detail: `EUR ${numberFormat(analysis.claim.claim_amount)}`, color: chartColors.violet }
+      ]
+    };
+  }
+
+  return {
+    type,
+    title: "Claim Snapshot",
+    items: [
+      { label: "Risk", value: analysis.risk.score, detail: `${analysis.risk.score}/100`, color: severityColor },
+      { label: "Evidence", value: evidencePercent, detail: `${evidencePercent}%`, color: chartColors.blue },
+      { label: "Coverage", value: coverageValue, detail: analysis.coverage.covered ? "Clear" : "Review", color: analysis.coverage.covered ? chartColors.success : chartColors.orange }
+    ]
+  };
 }
 
 function downloadClaimReport(analysis, approvalState, approvalLog, vertexState) {

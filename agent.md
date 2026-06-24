@@ -59,6 +59,9 @@ Guardrail:
 
 2026-06-24 pass:
 
+- Reworked the Vercel app into a three-zone console: left rail for claim controls/workspace tabs/runtime settings, middle canvas for workflow outputs and visualizations, and right rail for chatbot-only interaction.
+- Added a draggable chat resize handle on the right rail. Dragging left expands the chatbot; the existing canvas button still hides or shows the rail.
+- Added compact visual answer cards inside chat replies for risk, evidence, coverage, route, and general visualization questions.
 - Moved cloud project identifiers out of tracked README/source defaults and into ignored local environment files. `.env`, `.env.*`, and `.env.local` are ignored, while `.env.example` remains tracked with placeholders only.
 - Updated Vertex AI defaults from the retired Gemini 2.0 Flash path to `gemini-2.5-flash` with `global` location support. The Next.js API route now uses `https://aiplatform.googleapis.com` when location is `global`, while still supporting regional Vertex endpoints.
 - Expanded **Agent Chat** from the hero area into a full-height right-side canvas rail. It now owns the right side of the desktop layout, keeps the active claim summary above the conversation, and gives the chat message stream the remaining vertical space.
