@@ -116,9 +116,48 @@ const chartColors = {
   ink: "#ffffff"
 };
 
+// Providers selectable from the AI provider dropdown. Vertex AI uses a service
+// account; the rest take a plain API key supplied per run in the sidebar.
+const providerOptions = [
+  {
+    id: "vertex",
+    label: "Vertex AI",
+    defaultModel: "gemini-2.5-flash",
+    keyKind: "service",
+    keyHint: "Service account JSON with Vertex AI access."
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini (API key)",
+    defaultModel: "gemini-2.5-flash",
+    keyKind: "apiKey",
+    keyHint: "Google AI Studio key from aistudio.google.com/app/apikey."
+  },
+  {
+    id: "openai",
+    label: "OpenAI (API key)",
+    defaultModel: "gpt-4o-mini",
+    keyKind: "apiKey",
+    keyHint: "OpenAI key (sk-...) from platform.openai.com/api-keys."
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic Claude (API key)",
+    defaultModel: "claude-3-5-haiku-latest",
+    keyKind: "apiKey",
+    keyHint: "Anthropic key from console.anthropic.com/settings/keys."
+  }
+];
+
+function getProviderOption(provider) {
+  return providerOptions.find((option) => option.id === provider) || providerOptions[0];
+}
+
 const initialVertexState = {
   status: "checking",
   mode: "deterministic",
+  provider: "vertex",
+  providerLabel: "Vertex AI",
   enabled: false,
   liveRequested: true,
   hasCredentials: false,
@@ -131,10 +170,12 @@ const initialVertexState = {
 };
 
 const initialVertexConfig = {
+  provider: "vertex",
   projectId: "",
   projectNumber: "",
   location: "global",
   model: "gemini-2.5-flash",
+  apiKey: "",
   serviceAccountJson: ""
 };
 
@@ -258,46 +299,87 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   }
 
   function getVertexConfigPayload(config = vertexConfig) {
+    const option = getProviderOption(config.provider);
     return {
+      provider: config.provider,
       projectId: config.projectId.trim(),
       projectNumber: config.projectNumber.trim(),
       location: config.location.trim() || "global",
-      model: config.model.trim() || "gemini-2.5-flash",
+      model: config.model.trim() || option.defaultModel,
+      apiKey: config.apiKey.trim(),
       serviceAccountJson: config.serviceAccountJson.trim(),
       liveRequested: true
     };
   }
 
+  function updateProvider(provider) {
+    const option = getProviderOption(provider);
+    setVertexConfig((current) => ({
+      ...current,
+      provider,
+      // Swap to the provider default model unless the user typed a custom one.
+      model: current.model.trim() && current.model !== getProviderOption(current.provider).defaultModel
+        ? current.model
+        : option.defaultModel
+    }));
+  }
+
   async function applyVertexConfig(event) {
     event.preventDefault();
     const nextConfig = getVertexConfigPayload();
-    if (!nextConfig.serviceAccountJson && !vertexState.hasCredentials) {
+    const option = getProviderOption(nextConfig.provider);
+
+    if (option.keyKind === "service") {
+      if (!nextConfig.serviceAccountJson && !vertexState.hasCredentials) {
+        setVertexState((current) => ({
+          ...current,
+          provider: option.id,
+          providerLabel: option.label,
+          projectId: nextConfig.projectId,
+          projectNumber: nextConfig.projectNumber ? "***" : current.projectNumber || "***",
+          location: nextConfig.location,
+          model: nextConfig.model,
+          liveRequested: true,
+          status: "missing_credentials",
+          enabled: false,
+          review: null,
+          message: "Project ID and Project Number are settings, not credentials. Paste a service account JSON value to run Vertex AI live."
+        }));
+        setWorkflowNote("Vertex AI still needs a service account JSON credential. Project ID and Project Number are not enough to authenticate.");
+        return;
+      }
+    } else if (!nextConfig.apiKey) {
       setVertexState((current) => ({
         ...current,
-        projectId: nextConfig.projectId,
-        projectNumber: nextConfig.projectNumber ? "***" : current.projectNumber || "***",
-        location: nextConfig.location,
+        provider: option.id,
+        providerLabel: option.label,
         model: nextConfig.model,
         liveRequested: true,
         status: "missing_credentials",
         enabled: false,
+        hasCredentials: false,
         review: null,
-        message: "Project ID and Project Number are settings, not credentials. Paste a service account JSON value to run Vertex AI live."
+        message: `${option.label} needs an API key. Paste one in the sidebar — it is sent only for this run and never committed. ${option.keyHint}`
       }));
-      setWorkflowNote("Vertex AI still needs a service account JSON credential. Project ID and Project Number are not enough to authenticate.");
+      setWorkflowNote(`${option.label} live mode needs an API key for this run.`);
       return;
     }
+
     setVertexState((current) => ({
       ...current,
+      provider: option.id,
+      providerLabel: option.label,
       projectId: nextConfig.projectId,
       projectNumber: nextConfig.projectNumber ? "***" : current.projectNumber || "***",
       location: nextConfig.location,
       model: nextConfig.model,
       liveRequested: true,
-      hasCredentials: Boolean(nextConfig.serviceAccountJson) || current.hasCredentials,
-      message: "Vertex AI project settings applied. Running the active claim review..."
+      hasCredentials: option.keyKind === "service"
+        ? Boolean(nextConfig.serviceAccountJson) || current.hasCredentials
+        : Boolean(nextConfig.apiKey),
+      message: `${option.label} settings applied. Running the active claim review...`
     }));
-    setWorkflowNote("Vertex AI project settings applied; running active claim review.");
+    setWorkflowNote(`${option.label} settings applied; running active claim review.`);
     await runVertexWorkflow(submittedClaim, nextConfig);
   }
 
@@ -371,10 +453,13 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   }
 
   async function runVertexWorkflow(claim, configOverride = getVertexConfigPayload()) {
+    const option = getProviderOption(configOverride.provider);
     setVertexState((current) => ({
       ...current,
+      provider: option.id,
+      providerLabel: option.label,
       status: "running",
-      message: "Calling the ClaimsOps Vercel API route for Vertex AI review...",
+      message: `Calling the ClaimsOps Vercel API route for the ${option.label} review...`,
       review: null
     }));
 
@@ -382,22 +467,23 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
       const response = await fetch("/api/claimsops/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ claim, vertexConfig: configOverride })
+        body: JSON.stringify({ claim, provider: configOverride.provider, vertexConfig: configOverride })
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "ClaimsOps API route failed.");
 
-      const vertex = payload.vertex || {};
+      const runtime = payload.runtime || payload.vertex || {};
+      const label = runtime.providerLabel || option.label;
       setVertexState((current) => ({
         ...current,
-        ...vertex,
+        ...runtime,
         mode: payload.mode || "deterministic",
-        enabled: Boolean(vertex.enabled),
-        review: vertex.review || null
+        enabled: Boolean(runtime.enabled),
+        review: runtime.review || null
       }));
-      setWorkflowNote(vertex.enabled
-        ? "ClaimsOps Agent workflow completed with Vertex AI live review and deterministic guardrails."
-        : `ClaimsOps Agent workflow completed with deterministic tools. ${vertex.message || ""}`.trim());
+      setWorkflowNote(runtime.enabled
+        ? `ClaimsOps Agent workflow completed with the ${label} live review and deterministic guardrails.`
+        : `ClaimsOps Agent workflow completed with deterministic tools. ${runtime.message || ""}`.trim());
     } catch (error) {
       setVertexState((current) => ({
         ...current,
@@ -405,9 +491,9 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         mode: "deterministic",
         enabled: false,
         review: null,
-        message: `Vertex AI review failed; deterministic analysis is still available. ${error.message}`
+        message: `${option.label} review failed; deterministic analysis is still available. ${error.message}`
       }));
-      setWorkflowNote("ClaimsOps Agent workflow completed with deterministic tools; Vertex AI review failed.");
+      setWorkflowNote(`ClaimsOps Agent workflow completed with deterministic tools; the ${option.label} review failed.`);
     }
   }
 
@@ -477,13 +563,20 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         </nav>
 
         <div className="sidebar-status">
-          <p className="section-label">CrewAI / Vertex AI</p>
+          <p className="section-label">AI Review Runtime</p>
           <StatusRow label="Runtime" value="Vercel Next.js" />
-          <StatusRow label="Workflow" value={vertexState.enabled ? "Vertex AI + Tools" : "Deterministic Agent Tools"} />
-          <StatusRow label="Vertex" value={getVertexStatusLabel(vertexState.status)} />
+          <StatusRow label="Provider" value={vertexState.providerLabel || "Vertex AI"} />
+          <StatusRow label="Workflow" value={vertexState.enabled ? `${vertexState.providerLabel || "AI"} + Tools` : "Deterministic Agent Tools"} />
+          <StatusRow label="Live Status" value={getVertexStatusLabel(vertexState.status)} />
           <StatusRow label="Human Gate" value={approvalState} />
-          <StatusRow label="Vertex Project" value={vertexState.projectId || "Not set"} code />
-          <StatusRow label="Location" value={vertexState.location || "global"} code />
+          {vertexState.provider === "vertex" ? (
+            <>
+              <StatusRow label="Vertex Project" value={vertexState.projectId || "Not set"} code />
+              <StatusRow label="Location" value={vertexState.location || "global"} code />
+            </>
+          ) : (
+            <StatusRow label="API Key" value={vertexState.hasCredentials ? "Set for run" : "Not set"} />
+          )}
           <StatusRow label="Model" value={vertexState.model || "gemini-2.5-flash"} code />
           <p className="muted">{workflowNote}</p>
         </div>
@@ -492,6 +585,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
           config={vertexConfig}
           vertexState={vertexState}
           onChange={updateVertexConfig}
+          onProviderChange={updateProvider}
           onSubmit={applyVertexConfig}
         />
       </aside>
@@ -604,86 +698,140 @@ function StatusRow({ label, value, code = false }) {
   );
 }
 
-function VertexConfigBox({ config, vertexState, onChange, onSubmit }) {
-  const hasRunCredential = Boolean(config.serviceAccountJson.trim()) || vertexState.hasCredentials;
+function VertexConfigBox({ config, vertexState, onChange, onProviderChange, onSubmit }) {
+  const option = getProviderOption(config.provider);
+  const isVertex = option.keyKind === "service";
+  const hasRunCredential = isVertex
+    ? Boolean(config.serviceAccountJson.trim()) || vertexState.hasCredentials
+    : Boolean(config.apiKey.trim());
+
   return (
     <form className="vertex-config-box" onSubmit={onSubmit}>
       <div className="vertex-config-title">
         <VertexLiveIcon status={vertexState.status} enabled={vertexState.enabled} />
         <div>
-          <strong>Vertex AI Config</strong>
+          <strong>AI Provider Config</strong>
           <small>{getVertexStatusLabel(vertexState.status)}</small>
         </div>
       </div>
 
-      <label htmlFor="vertex-project-id">
-        Project ID
-        <input
-          id="vertex-project-id"
-          value={config.projectId}
-          onChange={(event) => onChange("projectId", event.target.value)}
-          placeholder="your-google-cloud-project-id"
-          spellCheck="false"
-        />
+      <label htmlFor="ai-provider">
+        Provider
+        <select
+          id="ai-provider"
+          value={config.provider}
+          onChange={(event) => onProviderChange(event.target.value)}
+        >
+          {providerOptions.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
       </label>
 
-      <label htmlFor="vertex-project-number">
-        Project Number
-        <input
-          id="vertex-project-number"
-          type="password"
-          inputMode="numeric"
-          value={config.projectNumber}
-          onChange={(event) => onChange("projectNumber", event.target.value)}
-          placeholder="***"
-          autoComplete="off"
-        />
-      </label>
+      {isVertex ? (
+        <>
+          <label htmlFor="vertex-project-id">
+            Project ID
+            <input
+              id="vertex-project-id"
+              value={config.projectId}
+              onChange={(event) => onChange("projectId", event.target.value)}
+              placeholder="your-google-cloud-project-id"
+              spellCheck="false"
+            />
+          </label>
 
-      <div className="vertex-config-grid">
-        <label htmlFor="vertex-location">
-          Location
-          <input
-            id="vertex-location"
-            value={config.location}
-            onChange={(event) => onChange("location", event.target.value)}
-            placeholder="global"
-            spellCheck="false"
-          />
-        </label>
-        <label htmlFor="vertex-model">
-          Model
-          <input
-            id="vertex-model"
-            value={config.model}
-            onChange={(event) => onChange("model", event.target.value)}
-            placeholder="gemini-2.5-flash"
-            spellCheck="false"
-          />
-        </label>
-      </div>
+          <label htmlFor="vertex-project-number">
+            Project Number
+            <input
+              id="vertex-project-number"
+              type="password"
+              inputMode="numeric"
+              value={config.projectNumber}
+              onChange={(event) => onChange("projectNumber", event.target.value)}
+              placeholder="***"
+              autoComplete="off"
+            />
+          </label>
 
-      <label htmlFor="vertex-service-account">
-        Service Account JSON Required For Live
-        <input
-          id="vertex-service-account"
-          type="password"
-          value={config.serviceAccountJson}
-          onChange={(event) => onChange("serviceAccountJson", event.target.value)}
-          placeholder="Paste service account JSON or base64"
-          autoComplete="off"
-          spellCheck="false"
-        />
-      </label>
+          <div className="vertex-config-grid">
+            <label htmlFor="vertex-location">
+              Location
+              <input
+                id="vertex-location"
+                value={config.location}
+                onChange={(event) => onChange("location", event.target.value)}
+                placeholder="global"
+                spellCheck="false"
+              />
+            </label>
+            <label htmlFor="vertex-model">
+              Model
+              <input
+                id="vertex-model"
+                value={config.model}
+                onChange={(event) => onChange("model", event.target.value)}
+                placeholder={option.defaultModel}
+                spellCheck="false"
+              />
+            </label>
+          </div>
+
+          <label htmlFor="vertex-service-account">
+            Service Account JSON Required For Live
+            <input
+              id="vertex-service-account"
+              type="password"
+              value={config.serviceAccountJson}
+              onChange={(event) => onChange("serviceAccountJson", event.target.value)}
+              placeholder="Paste service account JSON or base64"
+              autoComplete="off"
+              spellCheck="false"
+            />
+          </label>
+        </>
+      ) : (
+        <>
+          <label htmlFor="ai-api-key">
+            API Key Required For Live
+            <input
+              id="ai-api-key"
+              type="password"
+              value={config.apiKey}
+              onChange={(event) => onChange("apiKey", event.target.value)}
+              placeholder={`Paste your ${option.label.replace(" (API key)", "")} API key`}
+              autoComplete="off"
+              spellCheck="false"
+            />
+          </label>
+
+          <label htmlFor="ai-model">
+            Model
+            <input
+              id="ai-model"
+              value={config.model}
+              onChange={(event) => onChange("model", event.target.value)}
+              placeholder={option.defaultModel}
+              spellCheck="false"
+            />
+          </label>
+        </>
+      )}
 
       <button type="submit" className="button secondary wide">
         <Sparkles aria-hidden="true" size={15} />
         Apply And Run
       </button>
       {!hasRunCredential && (
-        <p className="vertex-config-warning">Project ID and Project Number are not credentials. Paste service account JSON to go live.</p>
+        <p className="vertex-config-warning">
+          {isVertex
+            ? "Project ID and Project Number are not credentials. Paste service account JSON to go live."
+            : `Paste your ${option.label.replace(" (API key)", "")} API key to go live.`}
+        </p>
       )}
-      <p>Project number and credential input stay masked. The credential is sent only for this run.</p>
+      <p>{option.keyHint} The credential is masked and sent only for this run.</p>
     </form>
   );
 }
@@ -755,11 +903,11 @@ function CapabilityStrip({ setActiveTab, vertexState }) {
     },
     {
       icon: Sparkles,
-      title: "Vertex AI Live Review",
+      title: `${vertexState.providerLabel || "AI"} Live Review`,
       status: vertexLive ? "Live" : vertexReady ? "Ready" : vertexMissing ? "Needs credentials" : "API route wired",
       body: vertexLive
-        ? "Gemini on Vertex AI added a live adjuster-facing explanation while deterministic tools stayed in control."
-        : "The Vercel API route is implemented. Add the service account env var to turn on live Gemini review.",
+        ? `${vertexState.providerLabel || "The model"} added a live adjuster-facing explanation while deterministic tools stayed in control.`
+        : "The Vercel API route is implemented. Choose a provider and add Vertex credentials or an API key to turn on the live review.",
       action: "View Review",
       tab: "review"
     }
@@ -1220,12 +1368,14 @@ function AgentReview({ analysis, approvalState, vertexState, approvalLog, onDown
 function VertexReviewPanel({ vertexState }) {
   const review = vertexState.review;
   const isLive = vertexState.status === "live";
+  const label = vertexState.providerLabel || "Vertex AI";
+  const isVertex = vertexState.provider === "vertex" || !vertexState.provider;
 
   return (
     <section className={`panel vertex-panel ${isLive ? "live" : ""}`}>
       <div className="panel-heading">
         <div>
-          <h3>Vertex AI Live Review</h3>
+          <h3>{label} Live Review</h3>
           <p>{vertexState.message}</p>
         </div>
         <span className={`runtime-badge ${isLive ? "live" : ""}`}>{getVertexStatusLabel(vertexState.status)}</span>
@@ -1237,7 +1387,7 @@ function VertexReviewPanel({ vertexState }) {
             <span>Generated Adjuster Summary</span>
             <p>{review.executive_summary}</p>
           </div>
-          <VertexList title="How Vertex Read The Case" items={review.reasoning_steps} />
+          <VertexList title="How The Model Read The Case" items={review.reasoning_steps} />
           <VertexList title="Questions For The Adjuster" items={review.adjuster_questions} />
           <VertexList title="Customer Next Steps" items={review.customer_next_steps} />
           <VertexList title="Risk Caveats" items={review.risk_caveats} />
@@ -1245,13 +1395,13 @@ function VertexReviewPanel({ vertexState }) {
       ) : (
         <div className="vertex-empty">
           <p>
-            The deterministic claims workflow is ready now. Vertex AI will add a live, plain-English review here
-            once the deployment has service account credentials with Vertex AI access.
+            The deterministic claims workflow is ready now. {label} will add a live, plain-English review here
+            once {isVertex ? "the deployment has service account credentials with Vertex AI access" : "a valid API key is supplied for the run"}.
           </p>
           <dl className="detail-list compact">
-            <div><dt>Project</dt><dd>{vertexState.projectId}</dd></div>
-            <div><dt>Project Number</dt><dd>{vertexState.projectNumber}</dd></div>
-            <div><dt>Location</dt><dd>{vertexState.location}</dd></div>
+            <div><dt>Provider</dt><dd>{label}</dd></div>
+            {isVertex && <div><dt>Project</dt><dd>{vertexState.projectId || "Not set"}</dd></div>}
+            {isVertex && <div><dt>Location</dt><dd>{vertexState.location || "global"}</dd></div>}
             <div><dt>Model</dt><dd>{vertexState.model}</dd></div>
           </dl>
         </div>
@@ -1275,12 +1425,19 @@ function VertexList({ title, items }) {
 }
 
 function VertexStatusPanel({ vertexState }) {
+  const label = vertexState.providerLabel || "Vertex AI";
+  const isVertex = vertexState.provider === "vertex" || !vertexState.provider;
   const statusItems = [
     { label: "API Route", value: "/api/claimsops/analyze" },
-    { label: "Mode", value: vertexState.enabled ? "Live Vertex AI review" : "Deterministic fallback" },
-    { label: "Credentials", value: vertexState.hasCredentials ? "Configured" : "Not configured" },
-    { label: "Project", value: vertexState.projectId },
-    { label: "Location", value: vertexState.location },
+    { label: "Provider", value: label },
+    { label: "Mode", value: vertexState.enabled ? `Live ${label} review` : "Deterministic fallback" },
+    { label: isVertex ? "Credentials" : "API Key", value: vertexState.hasCredentials ? (isVertex ? "Configured" : "Set for run") : "Not configured" },
+    ...(isVertex
+      ? [
+          { label: "Project", value: vertexState.projectId },
+          { label: "Location", value: vertexState.location }
+        ]
+      : []),
     { label: "Model", value: vertexState.model }
   ];
 
@@ -1288,8 +1445,8 @@ function VertexStatusPanel({ vertexState }) {
     <section className="panel vertex-status-panel">
       <div className="panel-heading">
         <div>
-          <h3>Vertex Runtime Status</h3>
-          <p>Shows whether the live Gemini on Vertex AI path is actually active for this deployment.</p>
+          <h3>AI Runtime Status</h3>
+          <p>Shows whether the live {label} path is actually active for this deployment.</p>
         </div>
         <span className={`runtime-badge ${vertexState.enabled ? "live" : ""}`}>{getVertexStatusLabel(vertexState.status)}</span>
       </div>
@@ -2051,8 +2208,12 @@ function answerAgentQuestion(question, analysis, approvalState, vertexState, app
     return "The architecture uses specialist agents for intake, coverage, evidence, risk, and communications. A supervisor agent combines their tool-backed outputs, selects the safest next route, and sends the case to a human approval gate before any final decision.";
   }
 
-  if (q.includes("vertex") || q.includes("live") || q.includes("model")) {
-    return `Vertex status is "${getVertexStatusLabel(vertexState.status)}". Project ${vertexState.projectId}, location ${vertexState.location}, model ${vertexState.model}. If credentials are configured and live mode is enabled, the app adds a Vertex AI review while deterministic tools remain the source of truth.`;
+  if (q.includes("vertex") || q.includes("live") || q.includes("model") || q.includes("provider") || q.includes("api key") || q.includes("openai") || q.includes("gemini") || q.includes("claude")) {
+    const label = vertexState.providerLabel || "Vertex AI";
+    const detail = vertexState.provider === "vertex" || !vertexState.provider
+      ? `project ${vertexState.projectId || "not set"}, location ${vertexState.location || "global"}, model ${vertexState.model}`
+      : `model ${vertexState.model}, API key ${vertexState.hasCredentials ? "set for the run" : "not set"}`;
+    return `The active AI provider is ${label} and its live status is "${getVertexStatusLabel(vertexState.status)}" (${detail}). You can switch provider in the sidebar between Vertex AI and an API-key model such as Gemini, OpenAI, or Anthropic. When credentials are present the app adds that provider's review while deterministic tools remain the source of truth.`;
   }
 
   if (q.includes("log") || q.includes("audit")) {
@@ -2147,7 +2308,7 @@ function buildClaimReportHtml(analysis, approvalState, approvalLog, vertexState)
     ["Evidence", analysis.evidence.missing.length ? `Missing ${analysis.evidence.missing.map(formatDocLabel).join(", ")}` : "All required evidence is present"],
     ["Recommendation", `${analysis.recommendation.action} (${analysis.recommendation.owner}, ${analysis.recommendation.sla})`],
     ["Human Gate", approvalState],
-    ["Vertex Runtime", `${getVertexStatusLabel(vertexState.status)} - ${vertexState.projectId} / ${vertexState.model}`]
+    ["AI Runtime", `${vertexState.providerLabel || "Vertex AI"} - ${getVertexStatusLabel(vertexState.status)} (${vertexState.model})`]
   ];
 
   return `<!doctype html>

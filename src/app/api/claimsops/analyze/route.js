@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 
 import { analyzeClaim } from "@/lib/claimsEngine";
+import { getProviderCatalog, isApiKeyProvider, runApiKeyClaimsReview } from "@/lib/llmProviders";
 import { getVertexRuntimeStatus, runVertexClaimsReview } from "@/lib/vertexAi";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   return NextResponse.json({
-    vertex: getVertexRuntimeStatus()
+    vertex: getVertexRuntimeStatus(),
+    providers: getProviderCatalog()
   });
 }
 
@@ -18,13 +20,20 @@ export async function POST(request) {
       return NextResponse.json({ error: "Missing claim payload." }, { status: 400 });
     }
 
+    const config = body.vertexConfig || body.config || {};
+    const provider = String(body.provider || config.provider || "vertex").toLowerCase();
+
     const analysis = analyzeClaim(body.claim);
-    const vertex = await runVertexClaimsReview(analysis, body.vertexConfig);
+    const runtime = isApiKeyProvider(provider)
+      ? await runApiKeyClaimsReview(analysis, { ...config, provider })
+      : await runVertexClaimsReview(analysis, config);
 
     return NextResponse.json({
-      mode: vertex.enabled ? "vertex" : "deterministic",
+      mode: runtime.enabled ? runtime.provider : "deterministic",
       analysis,
-      vertex
+      runtime,
+      // Back-compat alias: earlier clients read the runtime status from `vertex`.
+      vertex: runtime
     });
   } catch (error) {
     return NextResponse.json(

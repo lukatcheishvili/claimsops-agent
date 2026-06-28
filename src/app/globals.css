@@ -307,7 +307,8 @@ body.is-resizing-chat {
   font-weight: 720;
 }
 
-.vertex-config-box input {
+.vertex-config-box input,
+.vertex-config-box select {
   min-height: 38px;
   margin: 0;
   padding: 9px 10px;

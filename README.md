@@ -122,6 +122,27 @@ The app defaults to `global` and `gemini-2.5-flash` because current Google examp
 
 The sidebar also has a **Vertex AI Config** box. Use it to enter runtime settings for a specific demo run. To clear **Needs Credentials**, paste a service account JSON value into the masked credential field or configure `GOOGLE_SERVICE_ACCOUNT_JSON` in Vercel. The sidebar credential is sent only for the active request and is not committed to the repo.
 
+## Choose An AI Provider
+
+The Vercel app can generate the live adjuster review with **Vertex AI** or with a plain **API key** from another LLM. Pick one from the **Provider** dropdown in the left-rail config box:
+
+- **Vertex AI** — Google Cloud service account (existing path; uses the fields above).
+- **Google Gemini (API key)** — Google AI Studio key via the Generative Language API.
+- **OpenAI (API key)** — OpenAI Chat Completions (`sk-...` key).
+- **Anthropic Claude (API key)** — Anthropic Messages API key.
+
+For the API-key providers, paste the key into the masked **API Key** field and optionally change the **Model**. The key is sent only for the active request and is never written to the repo. Deterministic tool output stays the source of truth; if the key is missing or the provider call fails, the app falls back to deterministic-only mode and shows the exact reason.
+
+For deployments, the API-key providers also read these environment variables as a fallback when no key is pasted:
+
+```text
+GEMINI_API_KEY=...        # or GOOGLE_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=...
+```
+
+Do not commit API keys or local `.env` files.
+
 ## Run The Streamlit App
 
 Use this for the Python MVP and optional live CrewAI path.

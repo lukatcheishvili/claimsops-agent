@@ -1,6 +1,14 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 
+import {
+  CLAIMS_SYSTEM_INSTRUCTION,
+  buildClaimsUserPrompt,
+  parseClaimsReview
+} from "@/lib/llmReview";
+
+const PROVIDER_ID = "vertex";
+const PROVIDER_LABEL = "Vertex AI";
 const DEFAULT_PROJECT_ID = "";
 const DEFAULT_PROJECT_NUMBER = "***";
 const DEFAULT_LOCATION = "global";
@@ -12,6 +20,8 @@ const CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
 export function getVertexRuntimeStatus() {
   const config = getVertexConfig();
   return {
+    provider: PROVIDER_ID,
+    providerLabel: PROVIDER_LABEL,
     projectId: config.projectId,
     projectNumber: maskProjectNumber(config.projectNumber),
     location: config.location,
@@ -57,7 +67,7 @@ export async function runVertexClaimsReview(analysis, overrides = {}) {
     const text = extractCandidateText(payload);
     return {
       ...buildStatus("live", config, "Vertex AI produced a live claims review.", credentials),
-      review: parseVertexReview(text),
+      review: parseClaimsReview(text, PROVIDER_LABEL),
       rawText: text,
       generatedAt: new Date().toISOString()
     };
@@ -85,6 +95,8 @@ function getVertexConfig(overrides = {}) {
 
 function buildStatus(status, config, message, credentials = getServiceAccountCredentials()) {
   return {
+    provider: PROVIDER_ID,
+    providerLabel: PROVIDER_LABEL,
     enabled: status === "live",
     status,
     message,
@@ -224,26 +236,12 @@ function buildGenerateContentUrl(config) {
 function buildVertexRequest(analysis) {
   return {
     systemInstruction: {
-      parts: [
-        {
-          text:
-            "You are a claims operations review agent. Use the deterministic tool output as source of truth. " +
-            "Do not approve, deny, settle, pay, or accuse fraud. Explain routing in plain language for non-technical claims teams. " +
-            "Return only valid JSON."
-        }
-      ]
+      parts: [{ text: CLAIMS_SYSTEM_INSTRUCTION }]
     },
     contents: [
       {
         role: "user",
-        parts: [
-          {
-            text:
-              "Create a detailed but concise live Vertex AI review for this insurance claim. " +
-              "Explain how the workflow reached its conclusion and what a human adjuster should check next.\n\n" +
-              JSON.stringify(buildClaimsContext(analysis), null, 2)
-          }
-        ]
+        parts: [{ text: buildClaimsUserPrompt(analysis, PROVIDER_LABEL) }]
       }
     ],
     generationConfig: {
@@ -254,36 +252,6 @@ function buildVertexRequest(analysis) {
   };
 }
 
-function buildClaimsContext(analysis) {
-  const topDrivers = [...analysis.risk.contributions]
-    .filter((item) => item.label !== "Baseline intake risk")
-    .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
-    .slice(0, 5);
-
-  return {
-    expected_json_shape: {
-      executive_summary: "string",
-      reasoning_steps: ["string"],
-      adjuster_questions: ["string"],
-      customer_next_steps: ["string"],
-      risk_caveats: ["string"]
-    },
-    claim: analysis.claim,
-    coverage: analysis.coverage,
-    evidence: analysis.evidence,
-    risk: {
-      score: analysis.risk.score,
-      severity: analysis.risk.severity,
-      urgency: analysis.risk.urgency,
-      signals: analysis.risk.signals,
-      top_drivers: topDrivers
-    },
-    recommendation: analysis.recommendation,
-    human_gate: analysis.recommendation.human_gate,
-    trace: analysis.trace
-  };
-}
-
 function extractCandidateText(payload) {
   return (
     payload?.candidates?.[0]?.content?.parts
@@ -291,43 +259,6 @@ function extractCandidateText(payload) {
       .join("")
       .trim() || ""
   );
-}
-
-function parseVertexReview(text) {
-  const fallback = {
-    executive_summary: text || "Vertex AI returned an empty review.",
-    reasoning_steps: [],
-    adjuster_questions: [],
-    customer_next_steps: [],
-    risk_caveats: []
-  };
-
-  if (!text) return fallback;
-
-  try {
-    const jsonText = extractJsonObject(text);
-    const parsed = JSON.parse(jsonText);
-    return {
-      executive_summary: String(parsed.executive_summary || fallback.executive_summary),
-      reasoning_steps: normalizeStringList(parsed.reasoning_steps),
-      adjuster_questions: normalizeStringList(parsed.adjuster_questions),
-      customer_next_steps: normalizeStringList(parsed.customer_next_steps),
-      risk_caveats: normalizeStringList(parsed.risk_caveats)
-    };
-  } catch {
-    return fallback;
-  }
-}
-
-function normalizeStringList(value) {
-  return Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean).slice(0, 6) : [];
-}
-
-function extractJsonObject(text) {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) return text;
-  return text.slice(start, end + 1);
 }
 
 function normalizeModelName(model) {

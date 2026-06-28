@@ -1,6 +1,6 @@
 # ClaimsOps Agent Continuation Log
 
-Last updated: 2026-06-24
+Last updated: 2026-06-28
 
 ## Current Objective
 
@@ -56,6 +56,17 @@ Guardrail:
 - Human approval remains required for final claim actions.
 
 ## Latest Implementation Log
+
+2026-06-28 pass:
+
+- Added a multi-provider AI selector. The left-rail config box now has a **Provider** dropdown to choose **Vertex AI**, **Google Gemini (API key)**, **OpenAI (API key)**, or **Anthropic Claude (API key)**. Vertex keeps its service-account fields; the API-key providers show a masked API key + model field. Keys are sent only for the active request, never committed (same per-run safety pattern as the Vertex service-account field).
+- Added `src/lib/llmReview.js` — shared system instruction, claims context/prompt builder, and review parser reused by every live path so all providers return the same auditable review shape.
+- Added `src/lib/llmProviders.js` — `runApiKeyClaimsReview` for Gemini (Generative Language API), OpenAI (chat completions), and Anthropic (messages), plus `getProviderCatalog()`. Each returns the same normalized status object as Vertex and degrades to deterministic-only on missing key or API error.
+- Refactored `src/lib/vertexAi.js` to import the shared prompt/parse helpers and tag its status with `provider`/`providerLabel`.
+- Updated `/api/claimsops/analyze` to dispatch by `provider` and return the active runtime under `runtime` (with a `vertex` alias for back-compat). GET also returns the provider catalog with `hasEnvKey`.
+- Generalized the UI status rows, Agent Review panels, capability card, chat answer, and downloadable report so they read the active provider label instead of hard-coding "Vertex AI".
+- API-key providers also read deployment env vars as a fallback: `GEMINI_API_KEY`/`GOOGLE_API_KEY`/`GOOGLE_GENERATIVE_AI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`.
+- Verified: `pnpm build` (Next.js 15.5.19) succeeded; design/security scan clean; runtime smoke test of `/api/claimsops/analyze` confirmed Gemini-no-key returns `missing_credentials` and OpenAI-bad-key returns a graceful `error`, both keeping `mode: deterministic`.
 
 2026-06-24 pass:
 
