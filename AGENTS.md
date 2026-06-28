@@ -29,6 +29,12 @@ ClaimsOps Agent is a classroom-ready MVP for insurance claims operations. Preser
 - Do not use or print user-provided credentials. If a token is exposed in chat, remind the user to revoke and rotate it.
 - Runtime settings belong in `.env` locally or deployment secrets, not in source code.
 
+## Commit And Pull Request Attribution
+
+- Never add an LLM, AI assistant, or coding agent as a contributor, author, or co-author on any commit or pull request to this repository.
+- Do not append `Co-Authored-By: Claude ...` (or any other AI/agent) trailers to commit messages, and do not add "Generated with ..." AI attribution to pull request descriptions.
+- The only contributors on a pull request to `main` are the human users (the project team). Attribute work solely to the user who requested it.
+
 ## Verification Before Push
 
 Run these from the project root:
