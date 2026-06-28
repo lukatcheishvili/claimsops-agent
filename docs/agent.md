@@ -57,6 +57,12 @@ Guardrail:
 
 ## Latest Implementation Log
 
+2026-06-28 maintenance:
+
+- Removed the `cursor: help` (question-mark pointer) from the Architecture workflow boxes (`.flow-node`, `.workflow-terminal` in `src/app/globals.css`); they now use `cursor: default` while the hover popovers still work.
+- Tidied the repo root: moved `agent.md` to `docs/agent.md` and the Python `requirements.txt` / `requirements-crewai.txt` into `claimsops/`. Updated all references in `README.md` and `AGENTS.md`. Build/Vercel/pnpm config stays at the root because the tooling requires it there, and `docs/prompts_and_tools.md` / `docs/agent_skill_contract.md` stay put because `src/app/page.jsx` reads them at runtime.
+- Hardened `.gitignore` to exclude local clutter (`Course Materials/`, `claimsops-agent-repo/`, `.pnpm-store/`, stray `*.png` screenshots) so course materials and screenshots cannot be committed.
+
 2026-06-28 pass:
 
 - Added a multi-provider AI selector. The left-rail config box now has a **Provider** dropdown to choose **Vertex AI**, **Google Gemini (API key)**, **OpenAI (API key)**, or **Anthropic Claude (API key)**. Vertex keeps its service-account fields; the API-key providers show a masked API key + model field. Keys are sent only for the active request, never committed (same per-run safety pattern as the Vertex service-account field).
@@ -220,7 +226,7 @@ Highest-value next steps:
 
 Before editing:
 
-- Read `README.md`, `AGENTS.md`, this `agent.md`, `docs/project/PRODUCT.md`, and `docs/project/DESIGN.md`.
+- Read `README.md`, `AGENTS.md`, this `docs/agent.md`, `docs/project/PRODUCT.md`, and `docs/project/DESIGN.md`.
 - Check `git status --short`.
 - Preserve deterministic demo mode.
 - Keep all final claim decisions human-gated.

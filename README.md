@@ -38,24 +38,24 @@ These are the additions that most improve the project grade and demo clarity:
 |-- src/                         # Vercel / Next.js application source
 |   |-- app/                     # Next.js App Router pages, API route, global CSS
 |   |-- components/              # Interactive ClaimsOps UI components
-|   `-- lib/                     # JavaScript claims engine and Vertex AI helper
+|   `-- lib/                     # JS claims engine, LLM providers, Vertex AI helper
 |-- claimsops/                   # Streamlit / Python implementation
 |   |-- app.py                   # Streamlit interface
 |   |-- core/                    # Deterministic engine and CrewAI adapter
-|   `-- demo_data/               # Demo policies, claims, history, requirements
+|   |-- demo_data/               # Demo policies, claims, history, requirements
+|   |-- requirements.txt         # Streamlit dependencies
+|   `-- requirements-crewai.txt  # Optional CrewAI + Vertex AI dependencies
 |-- docs/
+|   |-- agent.md                 # Continuation log and project evaluation
 |   |-- agent_skill_contract.md  # Agent/tool contract shown in the app
 |   |-- prompts_and_tools.md     # Prompt and tool pack
 |   `-- project/                 # Product and design guidance
 |-- .streamlit/                  # Streamlit theme config
 |-- .env.example                 # Optional local live-mode environment template
 |-- AGENTS.md                    # Instructions for future coding agents
-|-- agent.md                     # Continuation log and project evaluation
 |-- next.config.mjs              # Next.js config
 |-- package.json                 # Vercel app scripts/dependencies
 |-- pnpm-lock.yaml               # Locked JS dependencies
-|-- requirements.txt             # Streamlit dependencies
-|-- requirements-crewai.txt      # Optional CrewAI + Vertex AI dependencies
 `-- vercel.json                  # Vercel build settings
 ```
 
@@ -149,7 +149,7 @@ Use this for the Python MVP and optional live CrewAI path.
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python -m pip install -r claimsops\requirements.txt
 .venv\Scripts\python -m streamlit run claimsops\app.py
 ```
 
@@ -168,7 +168,7 @@ The Streamlit app includes an optional CrewAI adapter. Deterministic mode remain
 Install optional dependencies:
 
 ```powershell
-.venv\Scripts\python -m pip install -r requirements-crewai.txt
+.venv\Scripts\python -m pip install -r claimsops\requirements-crewai.txt
 ```
 
 Create a local `.env` file from `.env.example`:
@@ -233,7 +233,7 @@ Tools provide structured facts: policy lookup, claim history, document requireme
 
 Before changing product behavior or UI, read:
 
-- `agent.md`
+- `docs/agent.md`
 - `docs/project/PRODUCT.md`
 - `docs/project/DESIGN.md`
 - `AGENTS.md`

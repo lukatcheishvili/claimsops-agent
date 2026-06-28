@@ -17,3 +17,12 @@ node_modules/
 .next/
 .vercel/
 out/
+.pnpm-store/
+
+# Local clutter that is not part of the deployable project
+Course Materials/
+claimsops-agent-repo/
+
+# Screenshots and course mockups (keep intentional images under docs/)
+*.png
+!docs/**/*.png
