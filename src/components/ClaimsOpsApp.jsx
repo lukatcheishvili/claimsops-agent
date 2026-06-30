@@ -2421,9 +2421,9 @@ function Architecture() {
                 />
               ))}
               <path d="M430 258 H 504" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M732 258 H 778 C 812 258, 792 138, 830 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 778 C 804 258, 804 144, 830 144" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
               <path d="M732 258 H 830" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M732 258 H 778 C 812 258, 792 378, 830 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 778 C 804 258, 804 378, 830 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
               <path d="M944 408 V 438" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
               <circle cx="430" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
               <circle cx="778" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
