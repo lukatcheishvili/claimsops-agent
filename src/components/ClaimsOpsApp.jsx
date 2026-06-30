@@ -2414,17 +2414,17 @@ function Architecture() {
               {specialistNodes.map((node) => (
                 <path
                   key={node.id}
-                  d={`M292 ${node.y + 36} H 352 C 398 ${node.y + 36}, 398 258, 430 258`}
+                  d={`M286 ${node.y + 36} H 352 C 398 ${node.y + 36}, 398 258, 430 258`}
                   stroke="url(#flowGradient)"
                   strokeWidth="2.5"
                   fill="none"
                 />
               ))}
-              <path d="M430 258 H 498" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M738 258 H 778 C 812 258, 792 138, 824 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M738 258 H 824" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M738 258 H 778 C 812 258, 792 378, 824 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M944 414 V 432" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M430 258 H 504" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 778 C 812 258, 792 138, 830 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 830" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 778 C 812 258, 792 378, 830 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M944 408 V 438" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
               <circle cx="430" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
               <circle cx="778" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
               <circle cx="944" cy="432" r="3.5" fill="#d44df0" opacity="0.95" />
