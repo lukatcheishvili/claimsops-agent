@@ -278,15 +278,24 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
 
   function loadSelectedClaim() {
     const sample = sampleClaims[selectedIndex];
-    const sampleAnalysis = analyzeClaim(sample);
-    setDraft(sample);
-    setSubmittedClaim(sample);
-    setApprovalState("Pending Adjuster Review");
-    setApprovalLog([createApprovalLogEntry("System", "Sample claim loaded and workflow refreshed.", sample.claim_id)]);
-    setChatMessages([createChatMessage("assistant", buildAgentGreeting(sampleAnalysis))]);
-    setWorkflowNote("Loaded sample claim and started ClaimsOps workflow.");
-    setActiveTab("review");
-    runVertexWorkflow(sample);
+    // Strip the seeded document labels and any prior uploads so the adjuster
+    // has to attach the actual evidence files before the workflow runs. The
+    // queue/dashboard still uses the original seeded sampleClaims so it stays
+    // populated.
+    const draftClaim = { ...sample, documents: [], files: {} };
+    setDraft(draftClaim);
+    setSubmittedClaim(draftClaim);
+    setApprovalState("Pending Intake");
+    setVertexState((current) => ({ ...current, review: null, enabled: false, mode: "deterministic" }));
+    setApprovalLog([createApprovalLogEntry("System", `Sample claim ${sample.claim_id} loaded. Awaiting evidence uploads.`, sample.claim_id)]);
+    setChatMessages([
+      createChatMessage(
+        "assistant",
+        `${sample.customer_name}'s ${sample.insurance_type.toLowerCase()} claim ${sample.claim_id} is loaded but no evidence has been attached yet. Upload the required documents in the Submit Claim form, then click Run ClaimsOps Agent Workflow so I can review coverage, evidence, risk, and routing.`
+      )
+    ]);
+    setWorkflowNote(`Loaded sample claim ${sample.claim_id}. Upload evidence files in Submit Claim, then run the workflow.`);
+    setActiveTab("submit");
   }
 
   function startNewClaim() {
