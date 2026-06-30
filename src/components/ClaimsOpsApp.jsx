@@ -210,6 +210,27 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const analysis = useMemo(() => analyzeClaim(submittedClaim), [submittedClaim]);
   const selectedSample = sampleClaims[selectedIndex];
 
+  // Restore the last viewed tab on refresh so a reload returns to the same
+  // view instead of the default intake tab. Done in an effect (not the initial
+  // useState) to keep the server and client first render identical.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("claimsops.activeTab");
+      if (saved && tabs.some((tab) => tab.id === saved)) setActiveTab(saved);
+    } catch {
+      // Ignore storage access errors (e.g., privacy mode) and keep the default tab.
+    }
+  }, []);
+
+  // Persist the active tab whenever it changes so the choice survives a refresh.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("claimsops.activeTab", activeTab);
+    } catch {
+      // Ignore storage write failures; tab persistence is a convenience only.
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     let active = true;
 
