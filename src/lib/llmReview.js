@@ -22,11 +22,26 @@ export function buildClaimsContext(analysis) {
     .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
     .slice(0, 5);
 
+  const evidenceForPrompt = {
+    ...analysis.evidence,
+    files: (analysis.evidence.files || []).map((file) => ({
+      docType: file.docType,
+      name: file.name,
+      mime: file.mime,
+      sizeLabel: file.sizeLabel,
+      valid: file.valid,
+      issues: file.issues
+    }))
+  };
+
+  const claimForPrompt = { ...analysis.claim };
+  delete claimForPrompt.files;
+
   return {
     expected_json_shape: REVIEW_JSON_SHAPE,
-    claim: analysis.claim,
+    claim: claimForPrompt,
     coverage: analysis.coverage,
-    evidence: analysis.evidence,
+    evidence: evidenceForPrompt,
     risk: {
       score: analysis.risk.score,
       severity: analysis.risk.severity,

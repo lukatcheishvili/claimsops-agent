@@ -93,6 +93,20 @@ export function dashboardRows() {
 
 function normalizeClaim(claim) {
   const insuranceType = titleCase(String(claim.insurance_type || "Auto").trim());
+  const rawFiles = claim.files && typeof claim.files === "object" ? claim.files : {};
+  const files = {};
+  Object.entries(rawFiles).forEach(([docType, file]) => {
+    if (!file) return;
+    files[docType] = {
+      name: String(file.name || ""),
+      type: String(file.type || ""),
+      size: Number(file.size || 0),
+      dataUrl: typeof file.dataUrl === "string" ? file.dataUrl : "",
+      uploadedAt: String(file.uploadedAt || "")
+    };
+  });
+  const labelDocs = new Set(claim.documents || []);
+  Object.keys(files).forEach((docType) => labelDocs.add(docType));
   return {
     ...claim,
     insurance_type: insuranceType,
@@ -101,7 +115,8 @@ function normalizeClaim(claim) {
     description: String(claim.description || "").trim(),
     location: String(claim.location || "").trim(),
     claim_amount: Math.trunc(Number(claim.claim_amount || 0)),
-    documents: Array.from(new Set(claim.documents || [])).sort()
+    documents: Array.from(labelDocs).sort(),
+    files
   };
 }
 
@@ -153,18 +168,55 @@ function evaluateCoverage(claim, policy) {
   };
 }
 
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const ACCEPTED_MIME_PREFIXES = ["image/"];
+const ACCEPTED_MIME_EXACT = ["application/pdf"];
+
 function evaluateEvidence(claim) {
   const requirements = documentRequirements[claim.insurance_type] || [];
+  const files = claim.files || {};
   const submitted = new Set(claim.documents || []);
+  Object.keys(files).forEach((docType) => submitted.add(docType));
   const missing = requirements.filter((doc) => !submitted.has(doc));
   const completion = requirements.length ? (requirements.length - missing.length) / requirements.length : 1;
+
+  const fileValidations = Object.entries(files).map(([docType, file]) => {
+    const issues = [];
+    const mime = String(file?.type || "");
+    const sizeBytes = Number(file?.size || 0);
+    const hasName = Boolean(file?.name);
+    if (!hasName) issues.push("missing_name");
+    if (sizeBytes <= 0) issues.push("empty_file");
+    if (sizeBytes > MAX_FILE_BYTES) issues.push("too_large");
+    const mimeOk = !mime || ACCEPTED_MIME_EXACT.includes(mime) || ACCEPTED_MIME_PREFIXES.some((prefix) => mime.startsWith(prefix));
+    if (!mimeOk) issues.push("unsupported_type");
+    return {
+      docType,
+      name: file?.name || "",
+      mime,
+      sizeBytes,
+      sizeLabel: formatFileSize(sizeBytes),
+      valid: issues.length === 0,
+      issues
+    };
+  });
+  const invalidFiles = fileValidations.filter((file) => !file.valid);
 
   return {
     required: requirements,
     submitted: Array.from(submitted).sort(),
     missing,
-    completion: Math.round(completion * 100) / 100
+    completion: Math.round(completion * 100) / 100,
+    files: fileValidations,
+    invalidFiles
   };
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function evaluateRisk(claim, policy, history, evidence, coverage) {
@@ -219,6 +271,18 @@ function evaluateRisk(claim, policy, history, evidence, coverage) {
       label: "Missing required evidence",
       impact: evidenceImpact,
       detail: `${evidence.missing.length} required document${evidence.missing.length === 1 ? " is" : "s are"} missing, so the claim should not proceed to settlement review yet.`,
+      tone: "risk"
+    });
+  }
+
+  if (evidence.invalidFiles?.length) {
+    const invalidImpact = Math.min(12, 4 * evidence.invalidFiles.length);
+    score += invalidImpact;
+    signals.push("One or more uploaded files failed validation.");
+    contributions.push({
+      label: "Invalid uploaded file(s)",
+      impact: invalidImpact,
+      detail: `${evidence.invalidFiles.length} uploaded file${evidence.invalidFiles.length === 1 ? "" : "s"} failed type or size validation; ask the customer to re-upload before settlement review.`,
       tone: "risk"
     });
   }
@@ -421,10 +485,8 @@ function buildTrace(claim, policy, coverage, evidence, risk, recommendation) {
     },
     {
       agent: "Evidence Review Agent",
-      decision: "Compare submitted evidence against the line-specific checklist.",
-      observation: evidence.missing.length
-        ? `Missing: ${evidence.missing.map(formatReadableLabel).join(", ")}`
-        : "All required documents are present.",
+      decision: "Validate uploaded files and compare them against the line-specific checklist.",
+      observation: buildEvidenceObservation(evidence),
       tool_used: "document_requirements_tool"
     },
     {
@@ -446,6 +508,27 @@ function buildTrace(claim, policy, coverage, evidence, risk, recommendation) {
       tool_used: "communication_draft_tool"
     }
   ];
+}
+
+function buildEvidenceObservation(evidence) {
+  const parts = [];
+  if (evidence.files?.length) {
+    const summary = evidence.files
+      .map((file) => `${formatReadableLabel(file.docType)} (${file.name || "unnamed"}, ${file.sizeLabel || "0 KB"}${file.valid ? "" : ", invalid"})`)
+      .join("; ");
+    parts.push(`Validated ${evidence.files.length} uploaded file${evidence.files.length === 1 ? "" : "s"}: ${summary}.`);
+  } else if (evidence.submitted.length) {
+    parts.push(`Submitted document tags: ${evidence.submitted.map(formatReadableLabel).join(", ")}.`);
+  }
+  if (evidence.invalidFiles?.length) {
+    parts.push(`${evidence.invalidFiles.length} file${evidence.invalidFiles.length === 1 ? "" : "s"} failed validation and must be re-uploaded.`);
+  }
+  if (evidence.missing.length) {
+    parts.push(`Missing required evidence: ${evidence.missing.map(formatReadableLabel).join(", ")}.`);
+  } else {
+    parts.push("All required documents for this insurance line are present.");
+  }
+  return parts.join(" ");
 }
 
 function parseDate(value) {

@@ -58,6 +58,18 @@
     "location": "Berlin, Germany",
     "description": "Parking lot collision. Policy may not be active for the incident date.",
     "documents": ["claim_form", "customer_id", "photos", "repair_estimate"]
+  },
+  {
+    "claim_id": "CLM-2026-3050",
+    "customer_name": "Mohammed Alkhan",
+    "policy_id": "AUTO-MHK-001",
+    "insurance_type": "Auto",
+    "incident_date": "2026-06-26",
+    "reported_date": "2026-06-27",
+    "claim_amount": 1200,
+    "location": "Manama, Bahrain",
+    "description": "Minor parking scratch on the driver-side door at the office parking lot. No other vehicle involved. Vehicle remains fully driveable.",
+    "documents": ["claim_form", "customer_id", "photos", "repair_estimate"]
   }
 ]
 

@@ -12,6 +12,11 @@ import {
   buildClaimsUserPrompt,
   parseClaimsReview
 } from "@/lib/llmReview";
+import {
+  CHAT_SYSTEM_INSTRUCTION,
+  buildGroundingPreamble,
+  normalizeChatHistory
+} from "@/lib/chatAgent";
 
 // Provider catalog. Vertex AI is handled separately in vertexAi.js; this catalog
 // covers the plain API-key providers exposed in the dropdown.
@@ -109,6 +114,159 @@ function buildStatus(provider, status, model, message) {
   };
 }
 
+// --- Chat path (multi-turn grounded conversation) ----------------------------
+
+export async function runApiKeyClaimsChat(analysis, question, history, config = {}) {
+  const provider = PROVIDERS[String(config.provider || "").toLowerCase()];
+  if (!provider) {
+    return chatStatusBlank(config.provider, "AI provider", "error", `Unknown LLM provider "${config.provider}".`);
+  }
+  const apiKey = sanitizeKey(config.apiKey) || resolveEnvKey(provider);
+  const model = sanitizeModelName(config.model) || provider.defaultModel;
+  if (!apiKey) {
+    return chatStatusBlank(provider.id, provider.label, "missing_credentials", `${provider.label} needs an API key for chat.`);
+  }
+
+  try {
+    const text = await runProviderChat(provider, { analysis, question, history, apiKey, model });
+    return {
+      provider: provider.id,
+      providerLabel: provider.label,
+      enabled: true,
+      status: "live",
+      model,
+      answer: text || "I could not produce an answer for that question."
+    };
+  } catch (error) {
+    return chatStatusBlank(provider.id, provider.label, "error", `${provider.label} chat failed: ${error.message}`);
+  }
+}
+
+function chatStatusBlank(providerId, providerLabel, status, message) {
+  return { provider: providerId, providerLabel, enabled: false, status, answer: "", message };
+}
+
+async function runProviderChat(provider, opts) {
+  switch (provider.id) {
+    case "gemini": return runGeminiChat(opts);
+    case "openai": return runOpenAiChat(opts);
+    case "anthropic": return runAnthropicChat(opts);
+    default: throw new Error(`Chat not implemented for provider ${provider.id}.`);
+  }
+}
+
+async function runGeminiChat({ analysis, question, history, apiKey, model }) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const contents = [];
+  contents.push({ role: "user", parts: [{ text: buildGroundingPreamble(analysis) }] });
+  contents.push({ role: "model", parts: [{ text: "Understood. I will reference this analysis as the source of truth and keep final decisions human-gated." }] });
+  normalizeChatHistory(history).forEach((entry) => {
+    contents.push({ role: entry.role === "assistant" ? "model" : "user", parts: [{ text: entry.text }] });
+  });
+  const finalParts = [];
+  appendGeminiFiles(finalParts, analysis);
+  finalParts.push({ text: String(question || "").trim() });
+  contents.push({ role: "user", parts: finalParts });
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: CHAT_SYSTEM_INSTRUCTION }] },
+      contents,
+      generationConfig: { temperature: 0.3, maxOutputTokens: 700 }
+    })
+  });
+  await assertOk(response, "Google Gemini");
+  const payload = await response.json();
+  return (
+    payload?.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || "")
+      .join("")
+      .trim() || ""
+  );
+}
+
+function appendGeminiFiles(parts, analysis) {
+  const files = analysis?.claim?.files || {};
+  Object.entries(files).forEach(([docType, file]) => {
+    if (!file?.dataUrl) return;
+    const base64 = String(file.dataUrl).split(",")[1];
+    if (!base64) return;
+    const mediaType = String(file.type || "");
+    const ok = mediaType === "application/pdf" || mediaType.startsWith("image/");
+    if (!ok) return;
+    parts.push({ inlineData: { mimeType: mediaType, data: base64 } });
+    parts.push({ text: `[Above attachment is the customer-submitted "${docType}" - filename "${file.name}".]` });
+  });
+}
+
+async function runOpenAiChat({ analysis, question, history, apiKey, model }) {
+  const messages = [
+    { role: "system", content: `${CHAT_SYSTEM_INSTRUCTION}\n\n${buildGroundingPreamble(analysis)}` }
+  ];
+  normalizeChatHistory(history).forEach((entry) => {
+    messages.push({ role: entry.role === "assistant" ? "assistant" : "user", content: entry.text });
+  });
+  messages.push({ role: "user", content: String(question || "").trim() });
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, temperature: 0.3, max_tokens: 700, messages })
+  });
+  await assertOk(response, "OpenAI");
+  const payload = await response.json();
+  return String(payload?.choices?.[0]?.message?.content || "").trim();
+}
+
+async function runAnthropicChat({ analysis, question, history, apiKey, model }) {
+  const messages = [];
+  normalizeChatHistory(history).forEach((entry) => {
+    messages.push({ role: entry.role === "assistant" ? "assistant" : "user", content: entry.text });
+  });
+  const finalContent = [];
+  appendAnthropicFiles(finalContent, analysis);
+  finalContent.push({ type: "text", text: String(question || "").trim() });
+  messages.push({ role: "user", content: finalContent.length > 1 ? finalContent : finalContent[0].text });
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model,
+      max_tokens: 700,
+      temperature: 0.3,
+      system: `${CHAT_SYSTEM_INSTRUCTION}\n\n${buildGroundingPreamble(analysis)}`,
+      messages
+    })
+  });
+  await assertOk(response, "Anthropic Claude");
+  const payload = await response.json();
+  return (
+    (Array.isArray(payload?.content) ? payload.content : [])
+      .map((block) => (block?.type === "text" ? block.text || "" : ""))
+      .join("")
+      .trim() || ""
+  );
+}
+
+function appendAnthropicFiles(blocks, analysis) {
+  const files = analysis?.claim?.files || {};
+  Object.entries(files).forEach(([docType, file]) => {
+    if (!file?.dataUrl) return;
+    const base64 = String(file.dataUrl).split(",")[1];
+    if (!base64) return;
+    const mediaType = String(file.type || "");
+    if (mediaType.startsWith("image/")) {
+      blocks.push({ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } });
+      blocks.push({ type: "text", text: `[Above attachment is the customer-submitted "${docType}" - filename "${file.name}".]` });
+    } else if (mediaType === "application/pdf") {
+      blocks.push({ type: "document", source: { type: "base64", media_type: mediaType, data: base64 } });
+      blocks.push({ type: "text", text: `[Above attachment is the customer-submitted "${docType}" - filename "${file.name}".]` });
+    }
+  });
+}
+
 // --- Provider request shapes --------------------------------------------------
 
 async function runGemini({ analysis, apiKey, model }) {
@@ -165,6 +323,19 @@ async function runOpenAi({ analysis, apiKey, model }) {
 }
 
 async function runAnthropic({ analysis, apiKey, model }) {
+  const attachments = buildAnthropicAttachments(analysis);
+  const userContent = [
+    ...attachments,
+    {
+      type: "text",
+      text: buildClaimsUserPrompt(analysis, "Anthropic Claude")
+    }
+  ];
+
+  const systemPrompt = attachments.length
+    ? `${CLAIMS_SYSTEM_INSTRUCTION} The user has attached the actual evidence files (claim form PDF, customer ID image, damage photos). Open each attachment, read or look at it, and reference specific things you observe — names, dates, amounts, plate numbers, visible damage — in the reasoning_steps and adjuster_questions. Respond with a single JSON object only.`
+    : `${CLAIMS_SYSTEM_INSTRUCTION} Respond with a single JSON object only.`;
+
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -174,10 +345,10 @@ async function runAnthropic({ analysis, apiKey, model }) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 900,
+      max_tokens: 1200,
       temperature: 0.2,
-      system: `${CLAIMS_SYSTEM_INSTRUCTION} Respond with a single JSON object only.`,
-      messages: [{ role: "user", content: buildClaimsUserPrompt(analysis, "Anthropic Claude") }]
+      system: systemPrompt,
+      messages: [{ role: "user", content: userContent }]
     })
   });
 
@@ -189,6 +360,37 @@ async function runAnthropic({ analysis, apiKey, model }) {
       .join("")
       .trim() || ""
   );
+}
+
+function buildAnthropicAttachments(analysis) {
+  const files = analysis?.claim?.files || {};
+  const blocks = [];
+  Object.entries(files).forEach(([docType, file]) => {
+    if (!file?.dataUrl) return;
+    const base64 = String(file.dataUrl).split(",")[1];
+    if (!base64) return;
+    const mediaType = String(file.type || "");
+    if (mediaType.startsWith("image/")) {
+      blocks.push({
+        type: "image",
+        source: { type: "base64", media_type: mediaType, data: base64 }
+      });
+      blocks.push({
+        type: "text",
+        text: `[Above attachment is the customer-submitted "${docType}" — filename "${file.name}". Look at it and reference what you actually see.]`
+      });
+    } else if (mediaType === "application/pdf") {
+      blocks.push({
+        type: "document",
+        source: { type: "base64", media_type: mediaType, data: base64 }
+      });
+      blocks.push({
+        type: "text",
+        text: `[Above attachment is the customer-submitted "${docType}" — filename "${file.name}". Read it and reference specific values you can see (names, dates, amounts, addresses).]`
+      });
+    }
+  });
+  return blocks;
 }
 
 // --- Helpers ------------------------------------------------------------------
