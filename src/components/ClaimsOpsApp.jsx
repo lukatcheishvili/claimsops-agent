@@ -2318,14 +2318,14 @@ function Architecture() {
     {
       id: "evidence",
       label: "Evidence Review",
-      detail: "Required vs submitted",
+      detail: "Required vs uploaded files",
       x: 52,
       y: 278,
       tooltipSide: "right",
       info: {
-        why: "Missing evidence is one of the most common reasons claims operations slow down.",
-        role: "Compares submitted files with the required checklist for the selected insurance line.",
-        output: "Evidence readiness percentage plus any missing documents to request."
+        why: "Missing or invalid evidence is one of the most common reasons claims operations slow down.",
+        role: "Validates real uploaded files (claim form, ID, photos, repair estimates) against the required checklist for the selected insurance line, and exposes them to the AI layer for multimodal review.",
+        output: "Evidence readiness percentage, invalid-file flags, and any missing documents to request."
       }
     },
     {
@@ -2350,13 +2350,13 @@ function Architecture() {
   };
   const toolInfo = {
     why: "Agents should rely on structured tools instead of inventing policy or history facts.",
-    role: "Provides deterministic lookup, checklist, history, risk, routing, and draft-generation functions.",
+    role: "Provides deterministic lookup, checklist, history, risk, and routing functions that the AI review layer builds on rather than replaces.",
     output: "Auditable tool results used as the source of truth."
   };
   const communicationInfo = {
-    why: "Claims teams need clear messages, but language must stay non-final and human-gated.",
-    role: "Drafts customer updates and internal adjuster notes from the verified workflow facts.",
-    output: "Communication drafts ready for adjuster review."
+    why: "Claims teams need a plain-language review and clear messages, but the language must stay non-final and human-gated.",
+    role: "Runs the live adjuster review and customer/adjuster drafts on the selected provider (Vertex AI, Gemini, OpenAI, or Anthropic), reads uploaded files through each provider's multimodal channel, and powers the grounded chat assistant.",
+    output: "A plain-English review, communication drafts, and grounded answers, with deterministic tool results kept as the source of truth."
   };
   const humanGateInfo = {
     why: "Insurance decisions can affect payments, denials, settlements, and customer rights.",
@@ -2375,7 +2375,7 @@ function Architecture() {
         <div className="panel-heading">
           <div>
             <h3>Agentic Claims Workflow</h3>
-            <p>Supervisor-led orchestration with deterministic tools, communication drafts, and human approval.</p>
+            <p>Supervisor-led orchestration with deterministic tools, a multimodal multi-provider AI review layer, grounded chat, and human approval.</p>
           </div>
           <span className="figma-badge">Workflow Board</span>
         </div>
@@ -2422,7 +2422,7 @@ function Architecture() {
             ))}
             <FlowNode className="supervisor" x={498} y={222} number={5} title="Supervisor Agent" detail="Chooses next tool and route" info={supervisorInfo} tooltipSide="bottom" />
             <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" info={toolInfo} tooltipSide="left-down" />
-            <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" info={communicationInfo} tooltipSide="left" />
+            <FlowNode className="tool" x={824} y={222} number={7} title="AI Review & Drafts" detail="Multimodal, multi-provider" info={communicationInfo} tooltipSide="left" />
             <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" info={humanGateInfo} tooltipSide="left-up" />
             <div
               className="workflow-terminal"
@@ -2443,13 +2443,13 @@ function Architecture() {
           icon={Route}
           title="Why This Architecture"
           status="Specialists reduce ambiguity"
-          body="Each agent owns one narrow operational question, which makes the final recommendation easier to audit."
+          body="Each agent owns one narrow operational question and relies on tool-backed facts, which makes the final recommendation easier to audit."
         />
         <ReasonCard
-          icon={Activity}
-          title="Where Tools Fit"
-          status="Tools produce facts"
-          body="Policy lookup, history, evidence checks, and scoring produce structured facts. The supervisor decides how to route them."
+          icon={Sparkles}
+          title="Multimodal AI Review"
+          status="Augments, never overrides"
+          body="A chosen provider (Vertex AI, Gemini, OpenAI, or Anthropic) writes the live review, reads uploaded evidence with vision, and powers grounded chat, while deterministic tool results stay the source of truth."
         />
         <ReasonCard
           icon={UserCheck}
