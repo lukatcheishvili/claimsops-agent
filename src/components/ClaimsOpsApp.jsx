@@ -8,8 +8,11 @@ import {
   ClipboardCheck,
   ClipboardList,
   Download,
+  Eye,
+  File as FileIcon,
   FileText,
   GitBranch,
+  Image as ImageIcon,
   LayoutDashboard,
   Maximize2,
   MessageSquare,
@@ -22,9 +25,11 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Trash2,
   UploadCloud,
   Users,
-  UserCheck
+  UserCheck,
+  XCircle
 } from "lucide-react";
 import {
   Bar,
@@ -54,6 +59,7 @@ import {
   blankClaim,
   claimLabel,
   dashboardRows,
+  documentRequirements,
   insuranceLines,
   sampleClaims
 } from "@/lib/claimsEngine";
@@ -188,6 +194,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const [workflowNote, setWorkflowNote] = useState("Vertex AI live mode is requested; deterministic guardrails stay available.");
   const [vertexState, setVertexState] = useState(initialVertexState);
   const [vertexConfig, setVertexConfig] = useState(initialVertexConfig);
+  const [providersCatalog, setProvidersCatalog] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [chatRailOpen, setChatRailOpen] = useState(true);
   const [chatRailWidth, setChatRailWidth] = useState(460);
@@ -203,6 +210,27 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
   const analysis = useMemo(() => analyzeClaim(submittedClaim), [submittedClaim]);
   const selectedSample = sampleClaims[selectedIndex];
 
+  // Restore the last viewed tab on refresh so a reload returns to the same
+  // view instead of the default intake tab. Done in an effect (not the initial
+  // useState) to keep the server and client first render identical.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("claimsops.activeTab");
+      if (saved && tabs.some((tab) => tab.id === saved)) setActiveTab(saved);
+    } catch {
+      // Ignore storage access errors (e.g., privacy mode) and keep the default tab.
+    }
+  }, []);
+
+  // Persist the active tab whenever it changes so the choice survives a refresh.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("claimsops.activeTab", activeTab);
+    } catch {
+      // Ignore storage write failures; tab persistence is a convenience only.
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     let active = true;
 
@@ -212,13 +240,31 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         const payload = await response.json();
         if (!active) return;
         const vertex = payload.vertex || {};
-        setVertexState((current) => ({
-          ...current,
-          ...vertex,
-          enabled: false,
-          status: !vertex.projectId ? "missing_project" : vertex.liveRequested && vertex.hasCredentials ? "ready" : vertex.liveRequested ? "missing_credentials" : "disabled",
-          message: getVertexConfigMessage(vertex)
-        }));
+        const catalog = Array.isArray(payload.providers) ? payload.providers : [];
+        setProvidersCatalog(catalog);
+        setVertexState((current) => {
+          const isVertexSelected = current.provider === "vertex" || !current.provider;
+          if (isVertexSelected) {
+            return {
+              ...current,
+              ...vertex,
+              enabled: false,
+              status: !vertex.projectId ? "missing_project" : vertex.liveRequested && vertex.hasCredentials ? "ready" : vertex.liveRequested ? "missing_credentials" : "disabled",
+              message: getVertexConfigMessage(vertex)
+            };
+          }
+          const entry = catalog.find((item) => item.id === current.provider);
+          const hasEnvKey = Boolean(entry?.hasEnvKey);
+          return {
+            ...current,
+            hasCredentials: hasEnvKey,
+            enabled: false,
+            status: hasEnvKey ? "ready" : "missing_credentials",
+            message: hasEnvKey
+              ? `${entry?.label || current.providerLabel || "Selected provider"} API key found in the deployment environment. Click Apply And Run to generate a live review.`
+              : `${entry?.label || current.providerLabel || "Selected provider"} needs an API key in the sidebar.`
+          };
+        });
         setVertexConfig((current) => ({
           ...current,
           projectId: vertex.projectId || current.projectId,
@@ -253,15 +299,24 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
 
   function loadSelectedClaim() {
     const sample = sampleClaims[selectedIndex];
-    const sampleAnalysis = analyzeClaim(sample);
-    setDraft(sample);
-    setSubmittedClaim(sample);
-    setApprovalState("Pending Adjuster Review");
-    setApprovalLog([createApprovalLogEntry("System", "Sample claim loaded and workflow refreshed.", sample.claim_id)]);
-    setChatMessages([createChatMessage("assistant", buildAgentGreeting(sampleAnalysis))]);
-    setWorkflowNote("Loaded sample claim and started ClaimsOps workflow.");
-    setActiveTab("review");
-    runVertexWorkflow(sample);
+    // Strip the seeded document labels and any prior uploads so the adjuster
+    // has to attach the actual evidence files before the workflow runs. The
+    // queue/dashboard still uses the original seeded sampleClaims so it stays
+    // populated.
+    const draftClaim = { ...sample, documents: [], files: {} };
+    setDraft(draftClaim);
+    setSubmittedClaim(draftClaim);
+    setApprovalState("Pending Intake");
+    setVertexState((current) => ({ ...current, review: null, enabled: false, mode: "deterministic" }));
+    setApprovalLog([createApprovalLogEntry("System", `Sample claim ${sample.claim_id} loaded. Awaiting evidence uploads.`, sample.claim_id)]);
+    setChatMessages([
+      createChatMessage(
+        "assistant",
+        `${sample.customer_name}'s ${sample.insurance_type.toLowerCase()} claim ${sample.claim_id} is loaded but no evidence has been attached yet. Upload the required documents in the Submit Claim form, then click Run ClaimsOps Agent Workflow so I can review coverage, evidence, risk, and routing.`
+      )
+    ]);
+    setWorkflowNote(`Loaded sample claim ${sample.claim_id}. Upload evidence files in Submit Claim, then run the workflow.`);
+    setActiveTab("submit");
   }
 
   function startNewClaim() {
@@ -285,10 +340,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
       createApprovalLogEntry("ClaimsOps Agent", `Workflow run completed. Recommended owner: ${nextAnalysis.recommendation.owner}.`, draft.claim_id),
       ...current
     ]);
-    setChatMessages((current) => [
-      ...current,
-      createChatMessage("assistant", buildAgentGreeting(nextAnalysis))
-    ]);
+    setChatMessages([createChatMessage("assistant", buildAgentGreeting(nextAnalysis))]);
     setWorkflowNote("Submitted claim and started ClaimsOps workflow.");
     setActiveTab("review");
     await runVertexWorkflow(draft);
@@ -322,6 +374,38 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         ? current.model
         : option.defaultModel
     }));
+    setVertexState((current) => {
+      if (option.keyKind === "service") {
+        const hasCredentials = Boolean(current.hasCredentials) || Boolean(vertexConfig.serviceAccountJson?.trim());
+        return {
+          ...current,
+          provider: option.id,
+          providerLabel: option.label,
+          model: option.defaultModel,
+          enabled: false,
+          status: !current.projectId ? "missing_project" : hasCredentials ? "ready" : "missing_credentials",
+          message: hasCredentials
+            ? "Vertex AI credentials detected. Click Apply And Run to use them."
+            : "Vertex AI needs service account credentials."
+        };
+      }
+      const entry = providersCatalog.find((item) => item.id === option.id);
+      const hasEnvKey = Boolean(entry?.hasEnvKey);
+      const pasted = Boolean(vertexConfig.apiKey?.trim());
+      const hasCredentials = hasEnvKey || pasted;
+      return {
+        ...current,
+        provider: option.id,
+        providerLabel: option.label,
+        model: option.defaultModel,
+        hasCredentials,
+        enabled: false,
+        status: hasCredentials ? "ready" : "missing_credentials",
+        message: hasCredentials
+          ? `${option.label} credentials detected${hasEnvKey ? " in the deployment environment" : ""}. Click Apply And Run to generate a live review.`
+          : `${option.label} needs an API key in the sidebar.`
+      };
+    });
   }
 
   async function applyVertexConfig(event) {
@@ -349,20 +433,24 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         return;
       }
     } else if (!nextConfig.apiKey) {
-      setVertexState((current) => ({
-        ...current,
-        provider: option.id,
-        providerLabel: option.label,
-        model: nextConfig.model,
-        liveRequested: true,
-        status: "missing_credentials",
-        enabled: false,
-        hasCredentials: false,
-        review: null,
-        message: `${option.label} needs an API key. Paste one in the sidebar — it is sent only for this run and never committed. ${option.keyHint}`
-      }));
-      setWorkflowNote(`${option.label} live mode needs an API key for this run.`);
-      return;
+      const entry = providersCatalog.find((item) => item.id === option.id);
+      const hasEnvKey = Boolean(entry?.hasEnvKey);
+      if (!hasEnvKey) {
+        setVertexState((current) => ({
+          ...current,
+          provider: option.id,
+          providerLabel: option.label,
+          model: nextConfig.model,
+          liveRequested: true,
+          status: "missing_credentials",
+          enabled: false,
+          hasCredentials: false,
+          review: null,
+          message: `${option.label} needs an API key. Paste one in the sidebar — it is sent only for this run and never committed. ${option.keyHint}`
+        }));
+        setWorkflowNote(`${option.label} live mode needs an API key for this run.`);
+        return;
+      }
     }
 
     setVertexState((current) => ({
@@ -391,15 +479,75 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
     ]);
   }
 
-  function sendAgentMessage(message) {
+  async function sendAgentMessage(message) {
     const text = message.trim();
     if (!text) return;
-    const reply = answerAgentQuestion(text, analysis, approvalState, vertexState, approvalLog);
+    const pendingId = `pending-${Date.now()}`;
     setChatMessages((current) => [
       ...current,
       createChatMessage("user", text),
-      createChatMessage("assistant", reply)
+      { ...createChatMessage("assistant", "..."), pending: true, id: pendingId }
     ]);
+
+    const fallback = () => {
+      const raw = answerAgentQuestion(text, analysis, approvalState, vertexState, approvalLog);
+      if (typeof raw === "string") return { content: raw, visual: null };
+      return { content: raw.content || "", visual: raw.visual || null };
+    };
+
+    try {
+      const historyForRequest = chatMessages
+        .filter((m) => !m.pending)
+        .map((m) => ({
+          role: m.role,
+          text: typeof m.content === "string" ? m.content : (m.content?.content || "")
+        }))
+        .filter((m) => m.text);
+
+      const response = await fetch("/api/claimsops/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          claim: submittedClaim,
+          question: text,
+          history: historyForRequest,
+          provider: vertexConfig.provider,
+          config: getVertexConfigPayload()
+        })
+      });
+
+      const payload = await response.json();
+      const runtime = payload?.runtime || {};
+      if (response.ok && runtime.enabled && runtime.answer) {
+        const liveLabel = runtime.providerLabel || "AI provider";
+        setChatMessages((current) =>
+          current.map((m) =>
+            m.id === pendingId
+              ? { ...m, pending: false, content: runtime.answer, source: `Live ${liveLabel}` }
+              : m
+          )
+        );
+      } else {
+        const reply = fallback();
+        const reason = runtime.message ? ` (${runtime.message})` : "";
+        setChatMessages((current) =>
+          current.map((m) =>
+            m.id === pendingId
+              ? { ...m, pending: false, content: reply.content, visual: reply.visual, source: `Deterministic fallback${reason}` }
+              : m
+          )
+        );
+      }
+    } catch (error) {
+      const reply = fallback();
+      setChatMessages((current) =>
+        current.map((m) =>
+          m.id === pendingId
+            ? { ...m, pending: false, content: reply.content, visual: reply.visual, source: `Deterministic fallback (${error.message})` }
+            : m
+        )
+      );
+    }
   }
 
   function startChatResize(event) {
@@ -584,6 +732,7 @@ export default function ClaimsOpsApp({ promptPack, skillContract }) {
         <VertexConfigBox
           config={vertexConfig}
           vertexState={vertexState}
+          providersCatalog={providersCatalog}
           onChange={updateVertexConfig}
           onProviderChange={updateProvider}
           onSubmit={applyVertexConfig}
@@ -698,12 +847,14 @@ function StatusRow({ label, value, code = false }) {
   );
 }
 
-function VertexConfigBox({ config, vertexState, onChange, onProviderChange, onSubmit }) {
+function VertexConfigBox({ config, vertexState, providersCatalog = [], onChange, onProviderChange, onSubmit }) {
   const option = getProviderOption(config.provider);
   const isVertex = option.keyKind === "service";
+  const catalogEntry = providersCatalog.find((item) => item.id === option.id);
+  const hasEnvKey = Boolean(catalogEntry?.hasEnvKey);
   const hasRunCredential = isVertex
     ? Boolean(config.serviceAccountJson.trim()) || vertexState.hasCredentials
-    : Boolean(config.apiKey.trim());
+    : Boolean(config.apiKey.trim()) || hasEnvKey;
 
   return (
     <form className="vertex-config-box" onSubmit={onSubmit}>
@@ -962,7 +1113,8 @@ function Tabs({ activeTab, setActiveTab }) {
 
 function SubmitClaimForm({ draft, setDraft, runWorkflow }) {
   const draftAnalysis = analyzeClaim(draft);
-  const missingDocs = draftAnalysis.evidence.missing;
+  const required = documentRequirements[draftAnalysis.claim.insurance_type] || [];
+  const extras = availableDocs.filter((doc) => !required.includes(doc));
 
   function updateField(field, value) {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -977,19 +1129,40 @@ function SubmitClaimForm({ draft, setDraft, runWorkflow }) {
     });
   }
 
-  function addDocument(doc) {
-    setDraft((current) => {
-      const submitted = new Set(current.documents || []);
-      submitted.add(doc);
-      return { ...current, documents: Array.from(submitted).sort() };
-    });
+  async function uploadFile(docType, file) {
+    if (!file) return;
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setDraft((current) => {
+        const submitted = new Set(current.documents || []);
+        submitted.add(docType);
+        return {
+          ...current,
+          documents: Array.from(submitted).sort(),
+          files: {
+            ...(current.files || {}),
+            [docType]: {
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              dataUrl,
+              uploadedAt: new Date().toISOString()
+            }
+          }
+        };
+      });
+    } catch (error) {
+      window.alert(`Could not read "${file.name}": ${error.message}`);
+    }
   }
 
-  function addAllMissingDocuments() {
+  function removeFile(docType) {
     setDraft((current) => {
+      const nextFiles = { ...(current.files || {}) };
+      delete nextFiles[docType];
       const submitted = new Set(current.documents || []);
-      missingDocs.forEach((doc) => submitted.add(doc));
-      return { ...current, documents: Array.from(submitted).sort() };
+      submitted.delete(docType);
+      return { ...current, files: nextFiles, documents: Array.from(submitted).sort() };
     });
   }
 
@@ -1054,47 +1227,54 @@ function SubmitClaimForm({ draft, setDraft, runWorkflow }) {
         />
       </div>
 
-      <fieldset className="document-grid">
-        <legend>
-          Submitted Evidence
-          <span>Select the documents currently available for review.</span>
-        </legend>
-        {availableDocs.map((doc) => (
-          <label key={doc} className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={(draft.documents || []).includes(doc)}
-              onChange={() => toggleDocument(doc)}
-            />
-            <span>{formatDocLabel(doc)}</span>
-          </label>
-        ))}
-      </fieldset>
-
-      <section className="evidence-simulator">
-        <div>
-          <UploadCloud aria-hidden="true" size={20} />
+      <section className="evidence-uploader" aria-label="Upload required evidence">
+        <header>
           <div>
-            <h3>Evidence Upload Simulation</h3>
-            <p>
-              Evidence readiness is {Math.round(draftAnalysis.evidence.completion * 100)}%.
-              {missingDocs.length ? " Add missing evidence to see the review package improve." : " The current review package has all required evidence."}
-            </p>
+            <UploadCloud aria-hidden="true" size={20} />
+            <div>
+              <h3>Required Evidence — {draftAnalysis.claim.insurance_type}</h3>
+              <p>
+                Upload the actual document file for each requirement. The Evidence Review Agent validates type and size before the review proceeds.
+                Evidence readiness is {Math.round(draftAnalysis.evidence.completion * 100)}%.
+              </p>
+            </div>
           </div>
+          <span className={`status-pill ${draftAnalysis.evidence.missing.length ? "warn" : "ready"}`}>
+            {draftAnalysis.evidence.missing.length
+              ? `${draftAnalysis.evidence.missing.length} document${draftAnalysis.evidence.missing.length === 1 ? "" : "s"} missing`
+              : "Evidence Ready"}
+          </span>
+        </header>
+
+        <div className="upload-grid">
+          {required.map((doc) => (
+            <FileUploadRow
+              key={doc}
+              docType={doc}
+              file={draft.files?.[doc]}
+              labelTagged={(draft.documents || []).includes(doc)}
+              onUpload={(file) => uploadFile(doc, file)}
+              onRemove={() => removeFile(doc)}
+            />
+          ))}
         </div>
-        {missingDocs.length ? (
-          <div className="simulation-actions">
-            {missingDocs.map((doc) => (
-              <button type="button" className="button ghost" key={doc} onClick={() => addDocument(doc)}>
-                Add {formatDocLabel(doc)}
-              </button>
-            ))}
-            <button type="button" className="button secondary" onClick={addAllMissingDocuments}>
-              Add All Missing Evidence
-            </button>
-          </div>
-        ) : (
-          <span className="status-pill ready">Evidence Ready</span>
+
+        {extras.length > 0 && (
+          <details className="extra-docs">
+            <summary>Optional supporting documents</summary>
+            <div className="extra-docs-grid">
+              {extras.map((doc) => (
+                <label key={doc} className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={(draft.documents || []).includes(doc)}
+                    onChange={() => toggleDocument(doc)}
+                  />
+                  <span>{formatDocLabel(doc)}</span>
+                </label>
+              ))}
+            </div>
+          </details>
         )}
       </section>
 
@@ -1104,6 +1284,106 @@ function SubmitClaimForm({ draft, setDraft, runWorkflow }) {
       </button>
     </form>
   );
+}
+
+function FileUploadRow({ docType, file, labelTagged, onUpload, onRemove }) {
+  const inputId = `upload-${docType}`;
+  const labelText = formatDocLabel(docType);
+  const accept = isImageDoc(docType) ? "image/*" : "application/pdf,image/*";
+
+  function handleChange(event) {
+    const picked = event.target.files && event.target.files[0];
+    if (picked) onUpload(picked);
+    event.target.value = "";
+  }
+
+  if (file) {
+    const isImage = String(file.type || "").startsWith("image/");
+    const isPdf = file.type === "application/pdf";
+    const sizeLabel = formatFileSize(file.size);
+    const validation = validateUploadedFile(file);
+    return (
+      <div className={`upload-row uploaded ${validation.valid ? "" : "invalid"}`}>
+        <div className="upload-row-icon">
+          {isImage ? <ImageIcon aria-hidden="true" size={20} /> : isPdf ? <FileText aria-hidden="true" size={20} /> : <FileIcon aria-hidden="true" size={20} />}
+        </div>
+        <div className="upload-row-body">
+          <strong>{labelText}</strong>
+          <span className="upload-filename" title={file.name}>{file.name}</span>
+          <span className="upload-meta">{sizeLabel} · {file.type || "unknown type"}</span>
+          {!validation.valid && <span className="upload-warning">{validation.message}</span>}
+        </div>
+        <div className="upload-row-actions">
+          {file.dataUrl && (
+            <a className="button ghost" href={file.dataUrl} target="_blank" rel="noreferrer" download={file.name} aria-label={`View ${labelText}`}>
+              <Eye aria-hidden="true" size={15} />
+              View
+            </a>
+          )}
+          <label className="button ghost" htmlFor={inputId}>
+            <RefreshCw aria-hidden="true" size={15} />
+            Replace
+          </label>
+          <button type="button" className="button ghost danger" onClick={onRemove} aria-label={`Remove ${labelText}`}>
+            <Trash2 aria-hidden="true" size={15} />
+          </button>
+          <input id={inputId} type="file" accept={accept} onChange={handleChange} hidden />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <label className={`upload-row empty ${labelTagged ? "label-tagged" : ""}`} htmlFor={inputId}>
+      <div className="upload-row-icon">
+        <UploadCloud aria-hidden="true" size={20} />
+      </div>
+      <div className="upload-row-body">
+        <strong>{labelText}</strong>
+        <span className="upload-meta">
+          {labelTagged
+            ? "Sample claim marked this as submitted — upload an actual file to validate it."
+            : "PDF or image, up to 10 MB."}
+        </span>
+      </div>
+      <div className="upload-row-actions">
+        <span className="button secondary">Choose File</span>
+      </div>
+      <input id={inputId} type="file" accept={accept} onChange={handleChange} hidden />
+    </label>
+  );
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("File could not be read."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function isImageDoc(docType) {
+  return ["photos", "property_photos", "customer_id", "beneficiary_id"].includes(docType);
+}
+
+function formatFileSize(bytes) {
+  const value = Number(bytes || 0);
+  if (!value) return "0 KB";
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function validateUploadedFile(file) {
+  const mime = String(file?.type || "");
+  const size = Number(file?.size || 0);
+  if (!mime) return { valid: true, message: "" };
+  const mimeOk = mime === "application/pdf" || mime.startsWith("image/");
+  if (!mimeOk) return { valid: false, message: "Unsupported file type — upload a PDF or image." };
+  if (size > 10 * 1024 * 1024) return { valid: false, message: "File is larger than the 10 MB cap." };
+  if (size === 0) return { valid: false, message: "File is empty." };
+  return { valid: true, message: "" };
 }
 
 function TextField({ label, value, onChange, type = "text", ...props }) {
@@ -1188,10 +1468,15 @@ function AgentChatRail({ analysis, vertexState, messages, onSend, onResizeStart 
         </div>
         <div className="chat-messages rail-messages" aria-live="polite">
           {messages.map((message) => (
-            <article className={`chat-message ${message.role}`} key={message.id}>
+            <article className={`chat-message ${message.role}${message.pending ? " pending" : ""}`} key={message.id}>
               <span>{message.role === "assistant" ? "ClaimsOps Agent" : "You"}</span>
-              <p>{message.content}</p>
+              {message.pending ? (
+                <p className="chat-typing"><span></span><span></span><span></span></p>
+              ) : (
+                <p>{message.content}</p>
+              )}
               {message.visual ? <ChatMessageVisual visual={message.visual} /> : null}
+              {message.source && !message.pending ? <small className="chat-source">{message.source}</small> : null}
             </article>
           ))}
         </div>
@@ -1222,7 +1507,7 @@ function AgentReview({ analysis, approvalState, vertexState, approvalLog, onDown
   const { claim, coverage, evidence, risk, recommendation, history } = analysis;
   const evidencePercent = Math.round(evidence.completion * 100);
   const topDrivers = [...risk.contributions]
-    .filter((item) => item.impact !== 12)
+    .filter((item) => item.label !== "Baseline intake risk")
     .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
     .slice(0, 4);
 
@@ -1267,6 +1552,8 @@ function AgentReview({ analysis, approvalState, vertexState, approvalLog, onDown
 
       <VertexReviewPanel vertexState={vertexState} />
       <VertexStatusPanel vertexState={vertexState} />
+
+      <SubmittedFilesPanel evidence={evidence} claimFiles={claim.files} />
 
       <div className="three-column">
         <ReasonCard
@@ -1424,6 +1711,88 @@ function VertexList({ title, items }) {
   );
 }
 
+function SubmittedFilesPanel({ evidence, claimFiles }) {
+  const files = evidence.files || [];
+  if (!files.length) {
+    return (
+      <section className="panel files-panel empty">
+        <header>
+          <div>
+            <UploadCloud aria-hidden="true" size={18} />
+            <h3>Submitted Evidence Files</h3>
+          </div>
+        </header>
+        <p className="muted">
+          No files have been uploaded for this claim yet. Open <strong>Submit Claim</strong> and upload the required documents to see the Evidence Review Agent validate each file.
+        </p>
+      </section>
+    );
+  }
+  return (
+    <section className="panel files-panel">
+      <header>
+        <div>
+          <UploadCloud aria-hidden="true" size={18} />
+          <h3>Submitted Evidence Files</h3>
+        </div>
+        <span className="muted">{files.length} file{files.length === 1 ? "" : "s"} validated by the Evidence Review Agent</span>
+      </header>
+      <div className="files-grid">
+        {files.map((entry) => {
+          const claimFile = claimFiles?.[entry.docType] || null;
+          const isImage = String(entry.mime || "").startsWith("image/");
+          const isPdf = entry.mime === "application/pdf";
+          return (
+            <article key={entry.docType} className={`file-card ${entry.valid ? "" : "invalid"}`}>
+              <div className="file-card-preview">
+                {isImage && claimFile?.dataUrl ? (
+                  <img src={claimFile.dataUrl} alt={`Preview of ${entry.name}`} />
+                ) : isPdf ? (
+                  <FileText aria-hidden="true" size={28} />
+                ) : (
+                  <FileIcon aria-hidden="true" size={28} />
+                )}
+              </div>
+              <div className="file-card-body">
+                <span className="file-card-label">{formatDocLabel(entry.docType)}</span>
+                <strong title={entry.name}>{entry.name || "Unnamed file"}</strong>
+                <span className="muted">{entry.sizeLabel} · {entry.mime || "unknown type"}</span>
+                <span className={`file-card-status ${entry.valid ? "ok" : "warn"}`}>
+                  {entry.valid ? (
+                    <>
+                      <CheckCircle2 aria-hidden="true" size={14} /> Validated
+                    </>
+                  ) : (
+                    <>
+                      <XCircle aria-hidden="true" size={14} /> {translateFileIssue(entry.issues?.[0])}
+                    </>
+                  )}
+                </span>
+              </div>
+              {claimFile?.dataUrl && (
+                <a className="button ghost" href={claimFile.dataUrl} target="_blank" rel="noreferrer" download={entry.name}>
+                  <Eye aria-hidden="true" size={15} />
+                  View
+                </a>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function translateFileIssue(code) {
+  switch (code) {
+    case "too_large": return "File exceeds the 10 MB cap";
+    case "unsupported_type": return "Unsupported file type";
+    case "empty_file": return "File is empty";
+    case "missing_name": return "Filename is missing";
+    default: return "File failed validation";
+  }
+}
+
 function VertexStatusPanel({ vertexState }) {
   const label = vertexState.providerLabel || "Vertex AI";
   const isVertex = vertexState.provider === "vertex" || !vertexState.provider;
@@ -1487,6 +1856,60 @@ function SeverityPill({ severity }) {
   return <span className={`severity ${severity.toLowerCase()}`}>{severity}</span>;
 }
 
+function pickRecommendedAction(analysis) {
+  const action = String(analysis.recommendation.action || "").toLowerCase();
+  if (action.includes("escalate") || action.includes("manual coverage review")) return "escalate";
+  if (action.includes("request missing")) return "evidence";
+  return "approve";
+}
+
+function AgentRecommendationBanner({ analysis, recommendedAction }) {
+  const tone = recommendedAction === "approve" ? "approve" : recommendedAction === "evidence" ? "evidence" : "escalate";
+  const headline = recommendedAction === "approve"
+    ? "Approve the next action"
+    : recommendedAction === "evidence"
+      ? "Request more evidence from the customer"
+      : "Escalate manually";
+  const Icon = recommendedAction === "approve" ? CheckCircle2 : recommendedAction === "evidence" ? Send : AlertTriangle;
+  return (
+    <section className={`recommendation-banner ${tone}`} aria-label="Agent recommendation">
+      <div className="recommendation-icon" aria-hidden="true">
+        <Icon size={22} />
+      </div>
+      <div className="recommendation-body">
+        <span className="recommendation-tag">ClaimsOps Agent Recommendation</span>
+        <strong>{headline}</strong>
+        <p>{analysis.recommendation.rationale}</p>
+        <dl className="recommendation-meta">
+          <div><dt>Route</dt><dd>{analysis.recommendation.action}</dd></div>
+          <div><dt>Owner</dt><dd>{analysis.recommendation.owner}</dd></div>
+          <div><dt>SLA</dt><dd>{analysis.recommendation.sla}</dd></div>
+          <div><dt>Human Gate</dt><dd>{analysis.recommendation.human_gate}</dd></div>
+        </dl>
+      </div>
+      <div className="recommendation-score">
+        <span>Risk</span>
+        <strong>{analysis.risk.score}/100</strong>
+        <SeverityPill severity={analysis.risk.severity} />
+      </div>
+    </section>
+  );
+}
+
+function ApprovalActionButton({ recommended, onClick, icon: Icon, label }) {
+  return (
+    <button
+      type="button"
+      className={`button ${recommended ? "primary" : "secondary"} approval-action ${recommended ? "recommended" : ""}`}
+      onClick={onClick}
+    >
+      <Icon aria-hidden="true" size={17} />
+      <span>{label}</span>
+      {recommended && <span className="recommended-tag">Recommended</span>}
+    </button>
+  );
+}
+
 function Communications({ analysis, approvalState, approvalLog, onApprovalAction }) {
   const missingEvidence = analysis.evidence.missing.map(formatDocLabel).join(", ");
   const approvalDetail = `Approved recommended next action: ${analysis.recommendation.action}.`;
@@ -1494,9 +1917,12 @@ function Communications({ analysis, approvalState, approvalLog, onApprovalAction
     ? `Requested missing evidence: ${missingEvidence}.`
     : "Requested adjuster confirmation even though required evidence is complete.";
   const escalationDetail = `Manual escalation opened for ${analysis.recommendation.owner}.`;
+  const recommendedAction = pickRecommendedAction(analysis);
 
   return (
     <div className="stack">
+      <AgentRecommendationBanner analysis={analysis} recommendedAction={recommendedAction} />
+
       <section className="approval-console">
         <div>
           <span className="section-label">Human Approval Gate</span>
@@ -1520,18 +1946,27 @@ function Communications({ analysis, approvalState, approvalLog, onApprovalAction
         </section>
       </div>
       <div className="button-row">
-        <button type="button" className="button secondary" onClick={() => onApprovalAction("Approved For Next Action", approvalDetail)}>
-          <CheckCircle2 aria-hidden="true" size={17} />
-          Approve Next Action
-        </button>
-        <button type="button" className="button secondary" onClick={() => onApprovalAction("Evidence Requested", evidenceDetail)}>
-          <Send aria-hidden="true" size={17} />
-          Request More Evidence
-        </button>
-        <button type="button" className="button secondary" onClick={() => onApprovalAction("Manual Escalation Opened", escalationDetail)}>
-          <AlertTriangle aria-hidden="true" size={17} />
-          Escalate Manually
-        </button>
+        <ApprovalActionButton
+          action="approve"
+          recommended={recommendedAction === "approve"}
+          onClick={() => onApprovalAction("Approved For Next Action", approvalDetail)}
+          icon={CheckCircle2}
+          label="Approve Next Action"
+        />
+        <ApprovalActionButton
+          action="evidence"
+          recommended={recommendedAction === "evidence"}
+          onClick={() => onApprovalAction("Evidence Requested", evidenceDetail)}
+          icon={Send}
+          label="Request More Evidence"
+        />
+        <ApprovalActionButton
+          action="escalate"
+          recommended={recommendedAction === "escalate"}
+          onClick={() => onApprovalAction("Manual Escalation Opened", escalationDetail)}
+          icon={AlertTriangle}
+          label="Escalate Manually"
+        />
       </div>
       <section className="panel audit-log-panel">
         <div className="panel-heading">
@@ -1904,14 +2339,14 @@ function Architecture() {
     {
       id: "evidence",
       label: "Evidence Review",
-      detail: "Required vs submitted",
+      detail: "Required vs uploaded files",
       x: 52,
       y: 278,
       tooltipSide: "right",
       info: {
-        why: "Missing evidence is one of the most common reasons claims operations slow down.",
-        role: "Compares submitted files with the required checklist for the selected insurance line.",
-        output: "Evidence readiness percentage plus any missing documents to request."
+        why: "Missing or invalid evidence is one of the most common reasons claims operations slow down.",
+        role: "Validates real uploaded files (claim form, ID, photos, repair estimates) against the required checklist for the selected insurance line, and exposes them to the AI layer for multimodal review.",
+        output: "Evidence readiness percentage, invalid-file flags, and any missing documents to request."
       }
     },
     {
@@ -1936,13 +2371,13 @@ function Architecture() {
   };
   const toolInfo = {
     why: "Agents should rely on structured tools instead of inventing policy or history facts.",
-    role: "Provides deterministic lookup, checklist, history, risk, routing, and draft-generation functions.",
+    role: "Provides deterministic lookup, checklist, history, risk, and routing functions that the AI review layer builds on rather than replaces.",
     output: "Auditable tool results used as the source of truth."
   };
   const communicationInfo = {
-    why: "Claims teams need clear messages, but language must stay non-final and human-gated.",
-    role: "Drafts customer updates and internal adjuster notes from the verified workflow facts.",
-    output: "Communication drafts ready for adjuster review."
+    why: "Claims teams need a plain-language review and clear messages, but the language must stay non-final and human-gated.",
+    role: "Runs the live adjuster review and customer/adjuster drafts on the selected provider (Vertex AI, Gemini, OpenAI, or Anthropic), reads uploaded files through each provider's multimodal channel, and powers the grounded chat assistant.",
+    output: "A plain-English review, communication drafts, and grounded answers, with deterministic tool results kept as the source of truth."
   };
   const humanGateInfo = {
     why: "Insurance decisions can affect payments, denials, settlements, and customer rights.",
@@ -1961,7 +2396,7 @@ function Architecture() {
         <div className="panel-heading">
           <div>
             <h3>Agentic Claims Workflow</h3>
-            <p>Supervisor-led orchestration with deterministic tools, communication drafts, and human approval.</p>
+            <p>Supervisor-led orchestration with deterministic tools, a multimodal multi-provider AI review layer, grounded chat, and human approval.</p>
           </div>
           <span className="figma-badge">Workflow Board</span>
         </div>
@@ -1979,18 +2414,20 @@ function Architecture() {
               {specialistNodes.map((node) => (
                 <path
                   key={node.id}
-                  d={`M292 ${node.y + 36} H 352 C 398 ${node.y + 36}, 398 258, 430 258`}
+                  d={`M286 ${node.y + 36} H 352 C 398 ${node.y + 36}, 398 258, 430 258`}
                   stroke="url(#flowGradient)"
                   strokeWidth="2.5"
                   fill="none"
                 />
               ))}
-              <path d="M430 258 H 498" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M738 258 H 778 C 812 258, 792 138, 824 138" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M738 258 H 824" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
-              <path d="M738 258 H 778 C 812 258, 792 378, 824 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M430 258 H 504" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 778 C 804 258, 804 144, 830 144" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 830" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M732 258 H 778 C 804 258, 804 378, 830 378" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
+              <path d="M944 408 V 438" stroke="url(#flowGradient)" strokeWidth="2.5" fill="none" />
               <circle cx="430" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
               <circle cx="778" cy="258" r="3.5" fill="#d44df0" opacity="0.95" />
+              <circle cx="944" cy="432" r="3.5" fill="#d44df0" opacity="0.95" />
             </svg>
 
             {specialistNodes.map((node, index) => (
@@ -2008,7 +2445,7 @@ function Architecture() {
             ))}
             <FlowNode className="supervisor" x={498} y={222} number={5} title="Supervisor Agent" detail="Chooses next tool and route" info={supervisorInfo} tooltipSide="bottom" />
             <FlowNode className="tool" x={824} y={102} number={6} title="Tool Layer" detail="Policy, history, checklist, risk rules" info={toolInfo} tooltipSide="left-down" />
-            <FlowNode className="tool" x={824} y={222} number={7} title="Communication Drafts" detail="Customer update and adjuster note" info={communicationInfo} tooltipSide="left" />
+            <FlowNode className="tool" x={824} y={222} number={7} title="AI Review & Drafts" detail="Multimodal, multi-provider" info={communicationInfo} tooltipSide="left" />
             <FlowNode className="human" x={824} y={342} number={8} title="Human Approval Gate" detail="Adjuster validates final action" info={humanGateInfo} tooltipSide="left-up" />
             <div
               className="workflow-terminal"
@@ -2029,13 +2466,13 @@ function Architecture() {
           icon={Route}
           title="Why This Architecture"
           status="Specialists reduce ambiguity"
-          body="Each agent owns one narrow operational question, which makes the final recommendation easier to audit."
+          body="Each agent owns one narrow operational question and relies on tool-backed facts, which makes the final recommendation easier to audit."
         />
         <ReasonCard
-          icon={Activity}
-          title="Where Tools Fit"
-          status="Tools produce facts"
-          body="Policy lookup, history, evidence checks, and scoring produce structured facts. The supervisor decides how to route them."
+          icon={Sparkles}
+          title="Multimodal AI Review"
+          status="Augments, never overrides"
+          body="A chosen provider (Vertex AI, Gemini, OpenAI, or Anthropic) writes the live review, reads uploaded evidence with vision, and powers grounded chat, while deterministic tool results stay the source of truth."
         />
         <ReasonCard
           icon={UserCheck}

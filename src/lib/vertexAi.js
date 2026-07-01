@@ -6,6 +6,11 @@ import {
   buildClaimsUserPrompt,
   parseClaimsReview
 } from "@/lib/llmReview";
+import {
+  CHAT_SYSTEM_INSTRUCTION,
+  buildGroundingPreamble,
+  normalizeChatHistory
+} from "@/lib/chatAgent";
 
 const PROVIDER_ID = "vertex";
 const PROVIDER_LABEL = "Vertex AI";
@@ -74,6 +79,101 @@ export async function runVertexClaimsReview(analysis, overrides = {}) {
   } catch (error) {
     return buildStatus("error", config, `Vertex AI live review failed: ${error.message}`, credentials);
   }
+}
+
+export async function runVertexClaimsChat(analysis, question, history, overrides = {}) {
+  const config = getVertexConfig(overrides);
+  const credentials = getServiceAccountCredentials(overrides);
+
+  if (!config.liveRequested) {
+    return chatStatus("disabled", "Vertex AI live mode is disabled.");
+  }
+  if (!config.projectId) {
+    return chatStatus("missing_project", "Vertex AI project is not configured.");
+  }
+  if (!credentials) {
+    return chatStatus("missing_credentials", "Vertex AI credentials are not configured.");
+  }
+
+  try {
+    const accessToken = await getAccessToken(credentials);
+    const response = await fetch(buildGenerateContentUrl(config), {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify(buildVertexChatRequest(analysis, question, history))
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      return chatStatus("error", `Vertex AI request failed with HTTP ${response.status}: ${text.slice(0, 220)}`);
+    }
+    const payload = await response.json();
+    const text = extractCandidateText(payload);
+    return {
+      provider: PROVIDER_ID,
+      providerLabel: PROVIDER_LABEL,
+      enabled: true,
+      status: "live",
+      answer: text || "I could not produce an answer for that question.",
+      model: config.model
+    };
+  } catch (error) {
+    return chatStatus("error", `Vertex AI chat failed: ${error.message}`);
+  }
+}
+
+function chatStatus(status, message) {
+  return {
+    provider: PROVIDER_ID,
+    providerLabel: PROVIDER_LABEL,
+    enabled: false,
+    status,
+    answer: "",
+    message
+  };
+}
+
+function buildVertexChatRequest(analysis, question, history) {
+  const contents = [];
+  // Grounding turn - synthesised pair so the model treats the JSON as
+  // authoritative context rather than user instructions to ignore.
+  contents.push({ role: "user", parts: [{ text: buildGroundingPreamble(analysis) }] });
+  contents.push({
+    role: "model",
+    parts: [{ text: "Understood. I will reference this analysis as the source of truth and keep final decisions human-gated." }]
+  });
+  // Prior turns
+  normalizeChatHistory(history).forEach((entry) => {
+    contents.push({
+      role: entry.role === "assistant" ? "model" : "user",
+      parts: [{ text: entry.text }]
+    });
+  });
+  // Current question with any file attachments
+  const finalParts = [];
+  appendVertexFiles(finalParts, analysis);
+  finalParts.push({ text: String(question || "").trim() });
+  contents.push({ role: "user", parts: finalParts });
+
+  return {
+    systemInstruction: { parts: [{ text: CHAT_SYSTEM_INSTRUCTION }] },
+    contents,
+    generationConfig: { temperature: 0.3, maxOutputTokens: 700 }
+  };
+}
+
+function appendVertexFiles(parts, analysis) {
+  const files = analysis?.claim?.files || {};
+  Object.entries(files).forEach(([docType, file]) => {
+    if (!file?.dataUrl) return;
+    const base64 = String(file.dataUrl).split(",")[1];
+    if (!base64) return;
+    const mediaType = String(file.type || "");
+    const ok = mediaType === "application/pdf" || mediaType.startsWith("image/");
+    if (!ok) return;
+    parts.push({ inlineData: { mimeType: mediaType, data: base64 } });
+    parts.push({ text: `[Above attachment is the customer-submitted "${docType}" - filename "${file.name}".]` });
+  });
 }
 
 function getVertexConfig(overrides = {}) {

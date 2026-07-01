@@ -70,6 +70,18 @@
     "claim_limit": 45000,
     "customer_segment": "Standard",
     "exclusions": ["commercial delivery use"]
+  },
+  {
+    "policy_id": "AUTO-MHK-001",
+    "customer_name": "Mohammed Alkhan",
+    "insurance_type": "Auto",
+    "status": "active",
+    "effective_date": "2025-01-01",
+    "expiration_date": "2027-12-31",
+    "deductible": 250,
+    "claim_limit": 30000,
+    "customer_segment": "VIP",
+    "exclusions": ["commercial delivery use", "unlicensed driver"]
   }
 ]
 
